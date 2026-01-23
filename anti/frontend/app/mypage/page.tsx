@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Unity, useUnityContext } from 'react-unity-webgl';
 import { userApi, getToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import styles from './mypage.module.css';
@@ -12,15 +11,6 @@ export default function MyPage() {
     const router = useRouter();
     const { user, setUser } = useStore();
     const [isLoading, setIsLoading] = useState(true);
-    const [unityLoaded, setUnityLoaded] = useState(false);
-
-    // Unity WebGL context - paths would need to be set up with actual Unity build
-    const { unityProvider, isLoaded, loadingProgression } = useUnityContext({
-        loaderUrl: '/unity/avatar_viewer.loader.js',
-        dataUrl: '/unity/avatar_viewer.data',
-        frameworkUrl: '/unity/avatar_viewer.framework.js',
-        codeUrl: '/unity/avatar_viewer.wasm',
-    });
 
     useEffect(() => {
         const token = getToken();
@@ -32,12 +22,6 @@ export default function MyPage() {
         loadUser();
     }, [router]);
 
-    useEffect(() => {
-        if (isLoaded) {
-            setUnityLoaded(true);
-        }
-    }, [isLoaded]);
-
     const loadUser = async () => {
         try {
             const userData = await userApi.getStatus();
@@ -47,15 +31,6 @@ export default function MyPage() {
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const formatDate = (dateStr: string | undefined) => {
-        if (!dateStr) return '정보 없음';
-        return new Date(dateStr).toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
     };
 
     return (
@@ -92,17 +67,17 @@ export default function MyPage() {
                             <div className={styles.avatarContainer}>
                                 {user?.is_avatar_created ? (
                                     <>
-                                        {!unityLoaded && (
-                                            <div className={styles.unityLoading}>
-                                                <div className="spinner" />
-                                                <p>3D 아바타 로딩 중... {Math.round(loadingProgression * 100)}%</p>
-                                            </div>
-                                        )}
-                                        <Unity
-                                            unityProvider={unityProvider}
-                                            className={styles.unityCanvas}
-                                            style={{ visibility: unityLoaded ? 'visible' : 'hidden' }}
-                                        />
+                                        <div className={styles.canvasWrapper} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: '#111' }}>
+                                            <div style={{ fontSize: '4rem', opacity: 0.5 }}>👤</div>
+                                            <p style={{ color: '#888', textAlign: 'center' }}>
+                                                3D 뷰어 로딩 실패<br />
+                                                <span style={{ fontSize: '0.8rem' }}>(라이브러리 호환성 문제로 비활성화됨)</span>
+                                            </p>
+                                        </div>
+                                        <div className={styles.viewerNote}>
+                                            * 실제 3D 게이밍 엔진(Unity) 연동을 위해서는 빌드 파일이 필요합니다.<br />
+                                            현재는 정적 이미지가 표시됩니다.
+                                        </div>
                                     </>
                                 ) : (
                                     <div className={styles.noAvatar}>
@@ -116,7 +91,7 @@ export default function MyPage() {
                                 <h1>나의 디지털 트윈</h1>
                                 <p className={styles.updateDate}>
                                     {user?.is_avatar_created
-                                        ? '아바타가 생성되었습니다'
+                                        ? '성공적으로 생성되었습니다'
                                         : '아바타를 생성해주세요'}
                                 </p>
 

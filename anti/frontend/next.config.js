@@ -4,6 +4,7 @@ const nextConfig = {
     images: {
         domains: ['image.musinsa.com', 'cdn.musinsa.com'],
     },
+    transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
     async rewrites() {
         return [
             {
