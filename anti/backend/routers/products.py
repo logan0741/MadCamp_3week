@@ -25,8 +25,10 @@ def extract_musinsa_id(url: str) -> str:
     patterns = [
         r'musinsa\.com/app/goods/(\d+)',
         r'musinsa\.com/goods/(\d+)',
+        r'musinsa\.com/products/(\d+)',  # New format
         r'store\.musinsa\.com/app/goods/(\d+)',
         r'goods/(\d+)',
+        r'products/(\d+)',
     ]
     
     for pattern in patterns:
