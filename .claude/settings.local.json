@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Skill(hud)",
-      "Skill(oh-my-claudecode:autopilot)"
-    ]
-  }
-}
