@@ -5,7 +5,7 @@
 ## 🏗️ 프로젝트 구조
 
 ```
-anti/
+./
 ├── backend/           # FastAPI 백엔드
 │   ├── main.py        # 앱 엔트리포인트
 │   ├── database.py    # SQLite 설정
@@ -43,11 +43,25 @@ anti/
 
 ```bash
 cd backend
+```
 
-# 가상환경 생성
+#### 가상환경 생성 및 활성화
+
+**Mac / Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**Windows:**
+```bash
 python -m venv venv
-venv\Scripts\activate  # Windows
+venv\Scripts\activate
+```
 
+#### 의존성 설치 및 실행
+
+```bash
 # 의존성 설치
 pip install -r requirements.txt
 
