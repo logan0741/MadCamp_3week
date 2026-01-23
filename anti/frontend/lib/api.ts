@@ -79,40 +79,12 @@ export interface User {
     avatar_url: string | null;
 }
 
-export interface Product {
-    id: number;
-    musinsa_id: string;
-    url: string;
-    title: string | null;
-    brand: string | null;
-    thumbnail_url: string | null;
-    is_garment_modeled: boolean;
-    current_price: number | null;
-    discount_rate: number | null;
-}
-
-export interface PriceLog {
-    id: number;
-    price: number;
-    discount_rate: number | null;
-    captured_at: string;
-}
-
-export interface AITask {
-    id: string;
-    task_type: string;
-    status: string;
-    result_url: string | null;
-    error_message: string | null;
-    created_at: string;
-    updated_at: string;
-}
-
 // API functions
-export const authApi = {
-    register: (data: { username: string; password: string; height?: number; weight?: number }) =>
-        apiRequest<User>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+export const userApi = {
+    getStatus: () => apiRequest<User>('/user/status'),
+};
 
+export const authApi = {
     login: async (username: string, password: string) => {
         const formData = new URLSearchParams();
         formData.append('username', username);
@@ -131,46 +103,4 @@ export const authApi = {
 
         return response.json() as Promise<{ access_token: string; token_type: string }>;
     },
-};
-
-export const userApi = {
-    getStatus: () => apiRequest<User>('/user/status'),
-    updateProfile: (data: { height?: number; weight?: number }) =>
-        apiRequest<User>('/user/profile', { method: 'PUT', body: JSON.stringify(data) }),
-};
-
-export const productApi = {
-    track: (url: string) =>
-        apiRequest<Product>('/products/track', { method: 'POST', body: JSON.stringify({ url }) }),
-
-    getAll: () =>
-        apiRequest<{ products: Product[]; total: number }>('/products'),
-
-    getHistory: (productId: number) =>
-        apiRequest<{ product_id: number; title: string; history: PriceLog[] }>(`/products/${productId}/history`),
-
-    remove: (productId: number) =>
-        apiRequest<{ message: string }>(`/products/${productId}`, { method: 'DELETE' }),
-};
-
-export const onboardingApi = {
-    upload: (video: File) => {
-        const formData = new FormData();
-        formData.append('video', video);
-        return uploadRequest<{ message: string; task_id: string; status: string }>('/onboarding/upload', formData);
-    },
-
-    getTaskStatus: (taskId: string) =>
-        apiRequest<AITask>(`/onboarding/task/${taskId}`),
-};
-
-export const aiApi = {
-    requestFitting: (productId: number) =>
-        apiRequest<AITask>(`/ai/fit/${productId}`, { method: 'POST' }),
-
-    getTasks: () =>
-        apiRequest<AITask[]>('/ai/tasks'),
-
-    getTaskStatus: (taskId: string) =>
-        apiRequest<AITask>(`/ai/task/${taskId}`),
 };
