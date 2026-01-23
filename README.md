@@ -89,6 +89,49 @@ npm run dev
 - **프론트엔드**: http://localhost:3000
 - **백엔드 API 문서**: http://localhost:8000/docs
 
+---
+
+## 🐳 Docker로 실행 (권장)
+
+### 환경변수 설정
+
+```bash
+# .env.example을 복사하여 .env 생성
+cp .env.example .env
+
+# .env 파일에서 SECRET_KEY 등 수정
+```
+
+### Docker Compose로 실행
+
+```bash
+# 빌드 및 실행
+docker-compose up --build
+
+# 백그라운드 실행
+docker-compose up -d --build
+
+# 로그 확인
+docker-compose logs -f
+
+# 중지
+docker-compose down
+```
+
+### 개별 컨테이너 빌드 (GPU 서버 배포 시)
+
+```bash
+# 백엔드만 빌드
+docker build -t musinsa-backend ./backend
+
+# 프론트엔드만 빌드
+docker build -t musinsa-frontend ./frontend
+
+# 실행
+docker run -d -p 8000:8000 musinsa-backend
+docker run -d -p 3000:3000 musinsa-frontend
+```
+
 ## 📱 주요 기능
 
 ### 1. 온보딩 (아바타 생성)
