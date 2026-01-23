@@ -2,24 +2,23 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { onboardingApi } from '@/lib/api';
+import { onboardingApi, getToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import styles from './onboarding.module.css';
 
-const RECORDING_INSTRUCTIONS = [
-    { text: '반갑습니다! 서비스를 시작하기 전, 당신만의 3D 아바타를 만들겠습니다.', duration: 4000 },
-    { text: '카메라 앞에 서서 전신이 보이도록 해주세요.', duration: 4000 },
-    { text: '준비가 되셨으면 촬영 시작 버튼을 눌러주세요.', duration: 3000 },
+const INTRO_STEPS = [
+    '반갑습니다! 서비스를 시작하기 전, 당신만의 3D 아바타를 만들겠습니다.',
+    '카메라 앞에 서서 전신이 보이도록 해주세요.',
+    '준비가 되셨으면 촬영 시작 버튼을 눌러주세요.',
 ];
 
 const RECORDING_POSES = [
-    { text: '정면을 바라봐주세요.', duration: 3000 },
-    { text: '양팔을 옆으로 들어주세요.', duration: 3000 },
-    { text: '천천히 왼쪽으로 돌아주세요.', duration: 3000 },
-    { text: '뒷면을 보여주세요.', duration: 3000 },
-    { text: '계속해서 오른쪽으로 돌아주세요.', duration: 3000 },
-    { text: '다시 정면을 바라봐주세요.', duration: 2000 },
-    { text: '촬영이 완료되었습니다!', duration: 2000 },
+    '정면을 바라봐주세요.',
+    '양팔을 옆으로 들어주세요.',
+    '천천히 왼쪽으로 돌아주세요.',
+    '뒷면을 보여주세요.',
+    '계속해서 오른쪽으로 돌아주세요.',
+    '다시 정면을 바라봐주세요.',
 ];
 
 export default function OnboardingPage() {
@@ -30,31 +29,59 @@ export default function OnboardingPage() {
     const chunksRef = useRef<Blob[]>([]);
 
     const [step, setStep] = useState<'intro' | 'recording' | 'uploading' | 'complete'>('intro');
-    const [currentInstruction, setCurrentInstruction] = useState(0);
-    const [isRecording, setIsRecording] = useState(false);
+    const [introStep, setIntroStep] = useState(0);
     const [recordingPose, setRecordingPose] = useState(0);
+    const [isRecording, setIsRecording] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [error, setError] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    // TTS function
-    const speak = useCallback((text: string) => {
-        if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ko-KR';
-            utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
+    // Check authentication on mount
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            router.push('/login');
+            return;
         }
+        setIsAuthenticated(true);
+    }, [router]);
+
+    // TTS function with promise
+    const speak = useCallback((text: string): Promise<void> => {
+        return new Promise((resolve) => {
+            if ('speechSynthesis' in window) {
+                setIsSpeaking(true);
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9;
+                utterance.onend = () => {
+                    setIsSpeaking(false);
+                    resolve();
+                };
+                utterance.onerror = () => {
+                    setIsSpeaking(false);
+                    resolve();
+                };
+                window.speechSynthesis.speak(utterance);
+            } else {
+                resolve();
+            }
+        });
     }, []);
 
     // Stop TTS
     const stopSpeaking = useCallback(() => {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
+            setIsSpeaking(false);
         }
     }, []);
 
-    // Initialize camera
+    // Initialize camera only after auth check
     useEffect(() => {
+        if (!isAuthenticated) return;
+
         const initCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -79,37 +106,40 @@ export default function OnboardingPage() {
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, [stopSpeaking]);
+    }, [isAuthenticated, stopSpeaking]);
 
-    // Play intro instructions
+    // Speak current intro step when it changes
     useEffect(() => {
-        if (step === 'intro' && currentInstruction < RECORDING_INSTRUCTIONS.length) {
-            speak(RECORDING_INSTRUCTIONS[currentInstruction].text);
-
-            const timer = setTimeout(() => {
-                setCurrentInstruction(prev => prev + 1);
-            }, RECORDING_INSTRUCTIONS[currentInstruction].duration);
-
-            return () => clearTimeout(timer);
+        if (step === 'intro' && introStep < INTRO_STEPS.length) {
+            speak(INTRO_STEPS[introStep]);
         }
-    }, [step, currentInstruction, speak]);
+    }, [step, introStep, speak]);
 
-    // Recording poses
+    // Handle next intro step
+    const handleNextIntro = () => {
+        stopSpeaking();
+        if (introStep < INTRO_STEPS.length - 1) {
+            setIntroStep(prev => prev + 1);
+        }
+    };
+
+    // Speak current recording pose when it changes
     useEffect(() => {
         if (isRecording && recordingPose < RECORDING_POSES.length) {
-            speak(RECORDING_POSES[recordingPose].text);
-
-            const timer = setTimeout(() => {
-                if (recordingPose === RECORDING_POSES.length - 1) {
-                    stopRecording();
-                } else {
-                    setRecordingPose(prev => prev + 1);
-                }
-            }, RECORDING_POSES[recordingPose].duration);
-
-            return () => clearTimeout(timer);
+            speak(RECORDING_POSES[recordingPose]);
         }
     }, [isRecording, recordingPose, speak]);
+
+    // Handle next recording pose
+    const handleNextPose = () => {
+        stopSpeaking();
+        if (recordingPose < RECORDING_POSES.length - 1) {
+            setRecordingPose(prev => prev + 1);
+        } else {
+            // Finish recording
+            stopRecording();
+        }
+    };
 
     const startRecording = async () => {
         if (!videoRef.current?.srcObject) return;
@@ -171,12 +201,12 @@ export default function OnboardingPage() {
             // Redirect to dashboard after delay
             setTimeout(() => {
                 router.push('/dashboard');
-            }, 3000);
+            }, 4000);
 
         } catch (err) {
             setError(err instanceof Error ? err.message : '업로드에 실패했습니다.');
             setStep('intro');
-            setCurrentInstruction(0);
+            setIntroStep(0);
         }
     };
 
@@ -215,15 +245,43 @@ export default function OnboardingPage() {
                     <>
                         <h2>3D 아바타 생성</h2>
                         <p className={styles.instruction}>
-                            {currentInstruction < RECORDING_INSTRUCTIONS.length
-                                ? RECORDING_INSTRUCTIONS[currentInstruction].text
-                                : '준비가 완료되었습니다!'}
+                            {INTRO_STEPS[introStep]}
                         </p>
-                        {currentInstruction >= RECORDING_INSTRUCTIONS.length && (
-                            <button onClick={startRecording} className="btn btn-primary btn-full">
-                                촬영 시작
-                            </button>
+
+                        {isSpeaking && (
+                            <div className={styles.speakingIndicator}>
+                                <span className={styles.speakingDot}></span>
+                                <span className={styles.speakingDot}></span>
+                                <span className={styles.speakingDot}></span>
+                            </div>
                         )}
+
+                        <div className={styles.buttonRow}>
+                            {introStep < INTRO_STEPS.length - 1 ? (
+                                <button
+                                    onClick={handleNextIntro}
+                                    className="btn btn-primary btn-full"
+                                >
+                                    다음 →
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={startRecording}
+                                    className="btn btn-primary btn-full"
+                                >
+                                    촬영 시작
+                                </button>
+                            )}
+                        </div>
+
+                        <div className={styles.stepIndicator}>
+                            {INTRO_STEPS.map((_, i) => (
+                                <span
+                                    key={i}
+                                    className={`${styles.stepDot} ${i === introStep ? styles.active : ''} ${i < introStep ? styles.completed : ''}`}
+                                />
+                            ))}
+                        </div>
                     </>
                 )}
 
@@ -231,14 +289,34 @@ export default function OnboardingPage() {
                     <>
                         <h2>촬영 중...</h2>
                         <p className={styles.instruction}>
-                            {RECORDING_POSES[recordingPose]?.text || '촬영 완료!'}
+                            {RECORDING_POSES[recordingPose]}
                         </p>
+
+                        {isSpeaking && (
+                            <div className={styles.speakingIndicator}>
+                                <span className={styles.speakingDot}></span>
+                                <span className={styles.speakingDot}></span>
+                                <span className={styles.speakingDot}></span>
+                            </div>
+                        )}
+
                         <div className={styles.progress}>
                             <div
                                 className={styles.progressBar}
                                 style={{ width: `${((recordingPose + 1) / RECORDING_POSES.length) * 100}%` }}
                             />
                         </div>
+
+                        <div className={styles.poseCounter}>
+                            {recordingPose + 1} / {RECORDING_POSES.length}
+                        </div>
+
+                        <button
+                            onClick={handleNextPose}
+                            className="btn btn-primary btn-full"
+                        >
+                            {recordingPose < RECORDING_POSES.length - 1 ? '다음 포즈 →' : '촬영 완료 ✓'}
+                        </button>
                     </>
                 )}
 
