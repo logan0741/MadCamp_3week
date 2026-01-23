@@ -1,0 +1,27 @@
+import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+    title: 'Musinsa Price Tracker & Virtual Try-On',
+    description: '무신사 가격 추적 및 3D 가상 피팅 서비스',
+};
+
+export default function RootLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <html lang="ko">
+            <head>
+                <link
+                    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+                    rel="stylesheet"
+                />
+            </head>
+            <body>
+                {children}
+            </body>
+        </html>
+    );
+}
