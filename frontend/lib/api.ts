@@ -37,6 +37,15 @@ export async function apiRequest<T>(
     });
 
     if (!response.ok) {
+        // Handle 401 Unauthorized - redirect to login
+        if (response.status === 401) {
+            removeToken();
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
+            throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        }
+
         const error = await response.json().catch(() => ({ detail: 'Request failed' }));
 
         // Handle FastAPI validation error (array of errors)
@@ -71,6 +80,15 @@ export async function uploadRequest<T>(
     });
 
     if (!response.ok) {
+        // Handle 401 Unauthorized - redirect to login
+        if (response.status === 401) {
+            removeToken();
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
+            throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        }
+
         const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
         throw new Error(error.detail || 'Upload failed');
     }

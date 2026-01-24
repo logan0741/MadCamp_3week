@@ -61,6 +61,8 @@ class ProductResponse(BaseModel):
     title: Optional[str]
     brand: Optional[str]
     thumbnail_url: Optional[str]
+    image_urls: List[str] = []  # All product images for carousel
+    original_price: Optional[int] = None  # Price before discount
     is_garment_modeled: bool
     current_price: Optional[int] = None
     discount_rate: Optional[int] = None
@@ -90,6 +92,10 @@ class PriceHistoryResponse(BaseModel):
     product_id: int
     title: Optional[str]
     history: List[PriceLogResponse]
+    min_price: Optional[int] = None  # Lowest price ever
+    max_price: Optional[int] = None  # Highest price ever
+    min_date: Optional[str] = None   # Date of lowest price
+    max_date: Optional[str] = None   # Date of highest price
 
 
 # ============= AI Task Schemas =============
