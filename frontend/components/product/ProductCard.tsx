@@ -1,22 +1,33 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Product } from '@/lib/api';
 import styles from './ProductCard.module.css';
 
 interface ProductCardProps {
     product: Product;
-    onViewChart: () => void;
     onRemove: () => void;
 }
 
-export default function ProductCard({ product, onViewChart, onRemove }: ProductCardProps) {
+export default function ProductCard({ product, onRemove }: ProductCardProps) {
+    const router = useRouter();
+
     const formatPrice = (price: number | null) => {
         if (!price) return '가격 정보 없음';
         return `${price.toLocaleString()}원`;
     };
 
+    const handleCardClick = () => {
+        router.push(`/product/${product.id}`);
+    };
+
+    const handleRemoveClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent card click
+        onRemove();
+    };
+
     return (
-        <div className={styles.card}>
+        <div className={styles.card} onClick={handleCardClick}>
             <div className={styles.imageContainer}>
                 {product.thumbnail_url ? (
                     <img
@@ -37,7 +48,7 @@ export default function ProductCard({ product, onViewChart, onRemove }: ProductC
                 )}
 
                 <button
-                    onClick={onRemove}
+                    onClick={handleRemoveClick}
                     className={styles.removeBtn}
                     title="삭제"
                 >
@@ -60,24 +71,6 @@ export default function ProductCard({ product, onViewChart, onRemove }: ProductC
                     </span>
                 </div>
 
-                <div className={styles.actions}>
-                    <button
-                        onClick={onViewChart}
-                        className={styles.chartBtn}
-                    >
-                        📊 가격 추이
-                    </button>
-
-                    <a
-                        href={product.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.linkBtn}
-                    >
-                        무신사 →
-                    </a>
-                </div>
-
                 {product.is_garment_modeled && (
                     <div className={styles.modeledBadge}>
                         ✓ 3D 모델링 완료
@@ -87,3 +80,4 @@ export default function ProductCard({ product, onViewChart, onRemove }: ProductC
         </div>
     );
 }
+

@@ -7,21 +7,18 @@ import os
 import uuid
 import aiofiles
 
-from database import get_db
-from models import User, AITask
-from schemas import OnboardingUploadResponse, AITaskResponse
-from routers.auth import get_current_user
+from core.database import get_db, SQLALCHEMY_DATABASE_URL
+from core.config import settings
+from domain.entities import User, AITask
+from domain.schemas import OnboardingUploadResponse, AITaskResponse
+from api.dependencies import get_current_user
 
 router = APIRouter()
-
-UPLOAD_DIR = "uploads/videos"
 
 
 async def process_avatar_generation(task_id: str, video_path: str, user_id: int, db_url: str):
     """
     Background task to process avatar generation.
-    In production, this would call ECON + SMPL-X + 3DGS pipeline.
-    For 8GB GPU, we'll use a simplified placeholder.
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
@@ -31,18 +28,15 @@ async def process_avatar_generation(task_id: str, video_path: str, user_id: int,
     db = SessionLocal()
     
     try:
-        # Update task status to processing
         task = db.query(AITask).filter(AITask.id == task_id).first()
         if task:
             task.status = "PROCESSING"
             db.commit()
         
         # TODO: Actual AI processing would go here
-        # For now, simulate processing time and create a placeholder
         import asyncio
         await asyncio.sleep(5)  # Simulate processing
         
-        # Update task and user with result
         if task:
             task.status = "COMPLETED"
             task.result_url = f"/uploads/avatars/{user_id}/avatar.glb"
@@ -72,7 +66,6 @@ async def upload_onboarding_video(
 ):
     """Upload onboarding video for avatar generation"""
     
-    # Validate file type
     allowed_types = ["video/mp4", "video/webm", "video/quicktime"]
     if video.content_type not in allowed_types:
         raise HTTPException(
@@ -80,21 +73,17 @@ async def upload_onboarding_video(
             detail=f"Invalid file type. Allowed: {allowed_types}"
         )
     
-    # Create user upload directory
-    user_upload_dir = os.path.join(UPLOAD_DIR, str(current_user.id))
+    user_upload_dir = os.path.join(settings.VIDEO_UPLOAD_DIR, str(current_user.id))
     os.makedirs(user_upload_dir, exist_ok=True)
     
-    # Generate unique filename
     file_ext = os.path.splitext(video.filename)[1]
     unique_filename = f"{uuid.uuid4()}{file_ext}"
     file_path = os.path.join(user_upload_dir, unique_filename)
     
-    # Save uploaded file
     async with aiofiles.open(file_path, 'wb') as f:
         content = await video.read()
         await f.write(content)
     
-    # Create AI task
     task = AITask(
         user_id=current_user.id,
         task_type="AVATAR",
@@ -104,13 +93,9 @@ async def upload_onboarding_video(
     db.commit()
     db.refresh(task)
     
-    # Create avatar output directory
-    avatar_dir = os.path.join("uploads/avatars", str(current_user.id))
+    avatar_dir = os.path.join(settings.AVATAR_UPLOAD_DIR, str(current_user.id))
     os.makedirs(avatar_dir, exist_ok=True)
     
-    # Add background task for processing
-    # Note: For actual async processing in production, use Celery
-    from database import SQLALCHEMY_DATABASE_URL
     background_tasks.add_task(
         process_avatar_generation,
         task.id,

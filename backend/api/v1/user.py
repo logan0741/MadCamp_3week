@@ -1,13 +1,15 @@
 """
 User Router - User status and profile management
+Thin controller layer - delegates to UserService
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User
-from schemas import UserStatus, UserUpdate
-from routers.auth import get_current_user
+from core.database import get_db
+from domain.entities import User
+from domain.schemas import UserStatus, UserUpdate
+from api.dependencies import get_current_user
+from services.user_service import UserService
 
 router = APIRouter()
 
@@ -25,12 +27,4 @@ async def update_profile(
     db: Session = Depends(get_db)
 ):
     """Update user profile (height, weight)"""
-    if update_data.height is not None:
-        current_user.height = update_data.height
-    if update_data.weight is not None:
-        current_user.weight = update_data.weight
-    
-    db.commit()
-    db.refresh(current_user)
-    
-    return current_user
+    return UserService.update_profile(db, current_user, update_data)

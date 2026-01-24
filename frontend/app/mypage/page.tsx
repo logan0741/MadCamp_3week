@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userApi, getToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
-import BottomNav from '@/components/BottomNav';
+import BottomNav from '@/components/layout/BottomNav';
 import styles from './mypage.module.css';
 
 export default function MyPage() {

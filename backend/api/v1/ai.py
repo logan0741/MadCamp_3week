@@ -4,11 +4,13 @@ AI Router - Virtual try-on and garment modeling
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
+import os
 
-from database import get_db
-from models import User, Product, AITask
-from schemas import AITaskResponse, AITaskCreate
-from routers.auth import get_current_user
+from core.database import get_db, SQLALCHEMY_DATABASE_URL
+from core.config import settings
+from domain.entities import User, Product, AITask
+from domain.schemas import AITaskResponse
+from api.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -16,7 +18,6 @@ router = APIRouter()
 async def process_garment_generation(task_id: str, product_id: int, db_url: str):
     """
     Background task to process garment 3D model generation.
-    For 8GB GPU, this would use a lighter model or placeholder.
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
@@ -63,21 +64,17 @@ async def request_garment_fitting(
 ):
     """Request 3D garment modeling for a specific product (on-demand)"""
     
-    # Check if user has avatar created
     if not current_user.is_avatar_created:
         raise HTTPException(
             status_code=400,
             detail="아바타를 먼저 생성해주세요. 온보딩을 완료해주세요."
         )
     
-    # Check if product exists
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="상품을 찾을 수 없습니다.")
     
-    # Check if garment is already modeled
     if product.is_garment_modeled:
-        # Return existing result
         existing_task = db.query(AITask).filter(
             AITask.product_id == product_id,
             AITask.task_type == "GARMENT",
@@ -87,7 +84,6 @@ async def request_garment_fitting(
         if existing_task:
             return existing_task
     
-    # Check for pending/processing task
     existing_task = db.query(AITask).filter(
         AITask.product_id == product_id,
         AITask.task_type == "GARMENT",
@@ -97,7 +93,6 @@ async def request_garment_fitting(
     if existing_task:
         return existing_task
     
-    # Create new task
     task = AITask(
         user_id=current_user.id,
         product_id=product_id,
@@ -108,13 +103,9 @@ async def request_garment_fitting(
     db.commit()
     db.refresh(task)
     
-    # Create output directory
-    import os
-    garment_dir = os.path.join("uploads/garments", str(product_id))
+    garment_dir = os.path.join(settings.GARMENT_UPLOAD_DIR, str(product_id))
     os.makedirs(garment_dir, exist_ok=True)
     
-    # Start background processing
-    from database import SQLALCHEMY_DATABASE_URL
     background_tasks.add_task(
         process_garment_generation,
         task.id,
@@ -131,7 +122,6 @@ async def get_user_tasks(
     db: Session = Depends(get_db)
 ):
     """Get all AI tasks for the current user"""
-    
     tasks = db.query(AITask).filter(
         AITask.user_id == current_user.id
     ).order_by(AITask.created_at.desc()).all()
@@ -146,7 +136,6 @@ async def get_task_status(
     db: Session = Depends(get_db)
 ):
     """Get specific AI task status"""
-    
     task = db.query(AITask).filter(
         AITask.id == task_id,
         AITask.user_id == current_user.id

@@ -1,21 +1,23 @@
 """
 FastAPI Main Application Entry Point
+Clean Architecture structure
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from database import engine, Base
-from routers import auth, user, onboarding, products, ai
+from core.config import settings
+from core.database import engine, Base
+from api.v1 import router as api_v1_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 # Create upload directories
-os.makedirs("uploads/videos", exist_ok=True)
-os.makedirs("uploads/avatars", exist_ok=True)
-os.makedirs("uploads/garments", exist_ok=True)
+os.makedirs(settings.VIDEO_UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.AVATAR_UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.GARMENT_UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
     title="Musinsa Price Tracker & Virtual Try-On API",
@@ -23,14 +25,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration for local development
-# Must use specific origins (not wildcard) when credentials are needed
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
@@ -40,12 +38,9 @@ app.add_middleware(
 # Static files for uploads
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Include routers
-app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(user.router, prefix="/user", tags=["User"])
-app.include_router(onboarding.router, prefix="/onboarding", tags=["Onboarding"])
-app.include_router(products.router, prefix="/products", tags=["Products"])
-app.include_router(ai.router, prefix="/ai", tags=["AI Tasks"])
+# Include API v1 routers
+# Note: keeping legacy routes without /api/v1 prefix for backward compatibility
+app.include_router(api_v1_router)
 
 
 @app.get("/")
