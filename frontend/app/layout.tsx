@@ -27,7 +27,9 @@ export default function RootLayout({
                 />
             </head>
             <body>
-                {children}
+                <div className="mobile-layout-container">
+                    {children}
+                </div>
             </body>
         </html>
     );

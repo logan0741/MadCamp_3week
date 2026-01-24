@@ -82,12 +82,26 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-bg-primary);
+  background-color: #f0f0f0; /* Default neutral background for desktop */
   color: var(--color-text-primary);
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  display: flex; /* Center the mobile view */
+  justify-content: center;
+  align-items: flex-start; /* Ensure scrolling works properly */
+  margin: 0;
+}
+
+.mobile-layout-container {
+  width: 100%;
+  max-width: 430px; /* iPhone Pro Max width approx */
+  min-height: 100vh;
+  background-color: var(--color-bg-primary); /* restore app bg color */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* shadow to separate from bg */
+  position: relative;
+  overflow-x: hidden;
 }
 
 a {
