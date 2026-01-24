@@ -99,10 +99,12 @@ export default function OnboardingPage() {
 
         // initCamera(); // Temporarily disabled for UI work
 
+        const videoElement = videoRef.current;
+
         return () => {
             stopSpeaking();
-            if (videoRef.current?.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
+            if (videoElement?.srcObject) {
+                const stream = videoElement.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
         };

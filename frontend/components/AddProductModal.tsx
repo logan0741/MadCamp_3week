@@ -83,7 +83,7 @@ export default function AddProductModal({ onClose, onAdd }: AddProductModalProps
 
                 <div className={styles.help}>
                     <strong>💡 Tip</strong>
-                    <p>무신사 앱에서 상품을 보고 '공유' 버튼을 눌러 URL을 복사할 수 있습니다.</p>
+                    <p>무신사 앱에서 상품을 보고 &apos;공유&apos; 버튼을 눌러 URL을 복사할 수 있습니다.</p>
                 </div>
             </div>
         </div>
