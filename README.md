@@ -4,6 +4,52 @@
 
 ---
 
+## 💻 서버 초기 설정 (Ubuntu 기준)
+
+아무것도 설치되지 않은 깡통 서버(Ubuntu)라면 아래 단계를 먼저 진행해주세요.
+
+### 1. 필수 패키지 설치 (Git, Docker)
+
+```bash
+# 시스템 업데이트
+sudo apt update && sudo apt upgrade -y
+
+# Git 설치
+sudo apt install -y git
+
+# Docker 설치
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Docker 권한 설정 (sudo 없이 사용하기 위함)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Docker 권한 확인
+docker ps
+```
+
+### 2. NVIDIA Container Toolkit 설치 (GPU 사용 시 필수)
+
+GPU를 사용하여 AI 모델을 돌리려면 Docker가 GPU를 인식할 수 있도록 툴킷을 설치해야 합니다.
+
+```bash
+# 저장소 설정
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+# 툴킷 설치
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+
+# Docker 데몬 재시작
+sudo systemctl restart docker
+```
+
+---
+
 ## 🚀 빠른 시작
 
 ### 방법 1: Docker로 실행 (권장)
