@@ -64,6 +64,9 @@ export default function MyPage() {
                         <Link href="/dashboard" className={styles.navLink}>
                             관심 상품
                         </Link>
+                        <Link href="/fitting" className={styles.navLink}>
+                            피팅
+                        </Link>
                         <Link href="/mypage" className={`${styles.navLink} ${styles.active}`}>
                             마이페이지
                         </Link>

@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { productApi, Product, PriceLog } from '@/lib/api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { productApi, Product, PriceLog, PriceHistoryResponse } from '@/lib/api';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer, ReferenceDot, Legend
+} from 'recharts';
 import styles from './PriceChartModal.module.css';
 
 interface PriceChartModalProps {
@@ -11,7 +14,7 @@ interface PriceChartModalProps {
 }
 
 export default function PriceChartModal({ product, onClose }: PriceChartModalProps) {
-    const [history, setHistory] = useState<PriceLog[]>([]);
+    const [historyData, setHistoryData] = useState<PriceHistoryResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -22,7 +25,7 @@ export default function PriceChartModal({ product, onClose }: PriceChartModalPro
     const loadHistory = async () => {
         try {
             const data = await productApi.getHistory(product.id);
-            setHistory(data.history);
+            setHistoryData(data);
         } catch (err) {
             setError('가격 히스토리를 불러올 수 없습니다.');
         } finally {
@@ -39,17 +42,24 @@ export default function PriceChartModal({ product, onClose }: PriceChartModalPro
         return `${price.toLocaleString()}원`;
     };
 
+    const history = historyData?.history || [];
     const chartData = history.map(log => ({
         date: formatDate(log.captured_at),
+        fullDate: log.captured_at,
         price: log.price,
         discount: log.discount_rate || 0,
     }));
 
-    // Calculate stats
-    const prices = history.map(h => h.price);
-    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-    const currentPrice = prices.length > 0 ? prices[prices.length - 1] : 0;
+    // Get min/max info from API response
+    const minPrice = historyData?.min_price || 0;
+    const maxPrice = historyData?.max_price || 0;
+    const minDate = historyData?.min_date ? formatDate(historyData.min_date) : null;
+    const maxDate = historyData?.max_date ? formatDate(historyData.max_date) : null;
+    const currentPrice = history.length > 0 ? history[history.length - 1].price : 0;
+
+    // Find data points for min/max markers
+    const minDataPoint = chartData.find(d => d.price === minPrice);
+    const maxDataPoint = chartData.find(d => d.price === maxPrice);
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -80,14 +90,19 @@ export default function PriceChartModal({ product, onClose }: PriceChartModalPro
                             <div className={styles.statItem}>
                                 <span className={styles.statLabel}>현재 가격</span>
                                 <span className={styles.statValue}>{formatPrice(currentPrice)}</span>
+                                {product.discount_rate && product.discount_rate > 0 && (
+                                    <span className={styles.discountBadge}>{product.discount_rate}% 할인</span>
+                                )}
                             </div>
                             <div className={styles.statItem}>
-                                <span className={styles.statLabel}>최저가</span>
+                                <span className={styles.statLabel}>역대 최저가</span>
                                 <span className={`${styles.statValue} ${styles.success}`}>{formatPrice(minPrice)}</span>
+                                {minDate && <span className={styles.statDate}>{minDate}</span>}
                             </div>
                             <div className={styles.statItem}>
-                                <span className={styles.statLabel}>최고가</span>
-                                <span className={styles.statValue}>{formatPrice(maxPrice)}</span>
+                                <span className={styles.statLabel}>역대 최고가</span>
+                                <span className={`${styles.statValue} ${styles.danger}`}>{formatPrice(maxPrice)}</span>
+                                {maxDate && <span className={styles.statDate}>{maxDate}</span>}
                             </div>
                         </div>
 
@@ -129,8 +144,41 @@ export default function PriceChartModal({ product, onClose }: PriceChartModalPro
                                         fillOpacity={1}
                                         fill="url(#colorPrice)"
                                     />
+                                    {/* Min price marker */}
+                                    {minDataPoint && (
+                                        <ReferenceDot
+                                            x={minDataPoint.date}
+                                            y={minDataPoint.price}
+                                            r={8}
+                                            fill="#00c853"
+                                            stroke="#fff"
+                                            strokeWidth={2}
+                                        />
+                                    )}
+                                    {/* Max price marker */}
+                                    {maxDataPoint && (
+                                        <ReferenceDot
+                                            x={maxDataPoint.date}
+                                            y={maxDataPoint.price}
+                                            r={8}
+                                            fill="#ff1744"
+                                            stroke="#fff"
+                                            strokeWidth={2}
+                                        />
+                                    )}
                                 </AreaChart>
                             </ResponsiveContainer>
+                        </div>
+
+                        <div className={styles.legend}>
+                            <span className={styles.legendItem}>
+                                <span className={styles.legendDot} style={{ background: '#00c853' }} />
+                                최저가
+                            </span>
+                            <span className={styles.legendItem}>
+                                <span className={styles.legendDot} style={{ background: '#ff1744' }} />
+                                최고가
+                            </span>
                         </div>
 
                         {minPrice < currentPrice && (
@@ -145,3 +193,4 @@ export default function PriceChartModal({ product, onClose }: PriceChartModalPro
         </div>
     );
 }
+

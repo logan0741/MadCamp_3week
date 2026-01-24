@@ -40,6 +40,8 @@ class Product(Base):
     title = Column(String(255), nullable=True)
     brand = Column(String(100), nullable=True)
     thumbnail_url = Column(Text, nullable=True)
+    image_urls = Column(Text, nullable=True)  # JSON array of image URLs for carousel
+    original_price = Column(Integer, nullable=True)  # Price before discount
     is_garment_modeled = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
