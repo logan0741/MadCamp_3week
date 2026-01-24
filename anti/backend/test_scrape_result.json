@@ -1,10 +1,14 @@
 {
-  "title": null,
-  "brand": null,
-  "thumbnail_url": null,
-  "image_urls": [],
-  "price": null,
-  "original_price": null,
-  "discount_rate": null,
+  "title": "3 스티치 와이드 워싱 데님 팬츠 [SBBLACK]_SEPT056SBBLACK",
+  "brand": "세컨모놀로그",
+  "thumbnail_url": "https://image.msscdn.net/images/goods_img/20240809/4316145/4316145_17243705721267_500.jpg",
+  "image_urls": [
+    "https://image.msscdn.net/images/prd_img/20240809/4316145/detail_4316145_17243705788521_500.jpg",
+    "https://image.msscdn.net/images/prd_img/20240809/4316145/detail_4316145_17243705796748_500.jpg",
+    "https://image.msscdn.net/images/prd_img/20240809/4316145/detail_4316145_17243705806106_500.jpg"
+  ],
+  "price": 33600,
+  "original_price": 96000,
+  "discount_rate": 65,
   "product_id": "4316145"
 }
