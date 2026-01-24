@@ -10,8 +10,8 @@
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-md);
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm);
 }
 
 .addCard {
@@ -22,8 +22,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 3 / 4;
-    /* Match product card ratio */
+    height: 100%;
+    /* Fill the grid cell height */
+    min-height: 160px;
+    /* Minimum height to ensure good aspect ratio */
     cursor: pointer;
     transition: all var(--transition-fast);
     border: 1px dashed var(--color-border);
