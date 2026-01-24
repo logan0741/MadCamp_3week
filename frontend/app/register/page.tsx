@@ -33,6 +33,11 @@ export default function RegisterPage() {
             return;
         }
 
+        if (formData.username.length < 3) {
+            setError('아이디는 최소 3자 이상이어야 합니다.');
+            return;
+        }
+
         if (formData.password.length < 6) {
             setError('비밀번호는 최소 6자 이상이어야 합니다.');
             return;

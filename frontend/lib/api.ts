@@ -2,7 +2,7 @@
  * API utilities for frontend-backend communication
  */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Token management
 export const getToken = (): string | null => {
@@ -38,6 +38,15 @@ export async function apiRequest<T>(
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+
+        // Handle FastAPI validation error (array of errors)
+        if (Array.isArray(error.detail)) {
+            const firstError = error.detail[0];
+            const msg = firstError.msg || 'Validation error';
+            // Translate common Pydantic errors if needed, or use as is
+            throw new Error(msg); // Just show the message part (e.g. "ensure this value has at least 3 characters")
+        }
+
         throw new Error(error.detail || 'Request failed');
     }
 

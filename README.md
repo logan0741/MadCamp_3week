@@ -4,35 +4,28 @@
 
 ---
 
-## 💻 서버 초기 설정 (Ubuntu 기준)
+## 🚀 빠른 시작
 
-아무것도 설치되지 않은 깡통 서버(Ubuntu)라면 아래 단계를 먼저 진행해주세요.
+### 1단계: 서버 초기 설정 (최초 1회만)
 
-### 1. 필수 패키지 설치 (Git, Docker)
+아무것도 설치되지 않은 깡통 서버(Ubuntu)라면 다음 설정을 먼저 진행해주세요.
 
+**1. 필수 패키지 설치**
 ```bash
-# 시스템 업데이트
+# 시스템 업데이트 & Git 설치
 sudo apt update && sudo apt upgrade -y
-
-# Git 설치
 sudo apt install -y git
 
 # Docker 설치
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
-# Docker 권한 설정 (sudo 없이 사용하기 위함)
+# Docker 권한 설정
 sudo usermod -aG docker $USER
 newgrp docker
-
-# Docker 권한 확인
-docker ps
 ```
 
-### 2. NVIDIA Container Toolkit 설치 (GPU 사용 시 필수)
-
-GPU를 사용하여 AI 모델을 돌리려면 Docker가 GPU를 인식할 수 있도록 툴킷을 설치해야 합니다.
-
+**2. NVIDIA Container Toolkit 설치 (GPU 사용 시)**
 ```bash
 # 저장소 설정
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
@@ -40,112 +33,83 @@ curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dear
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
-# 툴킷 설치
+# 툴킷 설치 및 Docker 재시작
 sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
-
-# Docker 데몬 재시작
 sudo systemctl restart docker
 ```
 
 ---
 
-## 🚀 빠른 시작
+### 2단계: 프로젝트 배포 및 실행 (반복)
 
-### 방법 1: Docker로 실행 (권장)
+서버에 접속할 때마다 또는 코드를 업데이트할 때 사용하는 명령어입니다.
 
+**1. 코드 가져오기 (처음)**
 ```bash
-# 1. 저장소 클론
 git clone https://github.com/logan0741/MadCamp_3week.git
 cd MadCamp_3week
-
-# 2. 환경변수 설정
-cp .env.example .env
-
-# 3. Docker Compose 실행
-docker-compose up -d --build
-
-# 4. 접속
-# 프론트엔드: http://localhost:3000
-# 백엔드 API: http://localhost:8000/docs
 ```
 
-### 방법 2: 로컬 개발 환경
+**2. 코드 최신화 (업데이트 시)**
+```bash
+git pull origin main
+```
 
-#### Step 1. 백엔드 설정
+**3. Docker 실행 (빌드 및 실행)**
+```bash
+# 기존 컨테이너 중지 및 삭제
+docker compose down
 
+# 새로 빌드하여 백그라운드 실행
+docker compose up -d --build
+
+# 로그 실시간 확인
+docker compose logs -f
+```
+
+---
+
+## 💻 로컬 개발 환경 설정
+
+로컬에서도 Docker를 사용하면 서버 환경과 동일한 조건에서 개발할 수 있어 권장합니다.
+
+### 방법 1: Docker로 개발 (권장)
+
+`docker-compose.dev.yml`을 사용하여 코드가 실시간으로 반영(Hot Reload)되는 개발 환경을 실행합니다.
+
+```bash
+# 개발용 컨테이너 실행
+docker compose -f docker-compose.dev.yml up --build
+
+# 접속
+# 프론트엔드: http://localhost:3000 (코드 수정 시 자동 반영)
+# 백엔드: http://localhost:8000 (코드 수정 시 자동 재시작)
+```
+
+### 방법 2: 직접 설치 (Manual Setup)
+
+Docker를 사용할 수 없는 경우에만 사용하세요.
+
+#### Backend
 ```bash
 cd backend
-```
+python3 -m venv venv        # Mac
+# python -m venv venv       # Windows
 
-**Mac / Linux:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+source venv/bin/activate    # Mac
+# venv\Scripts\activate     # Windows
 
-**Windows:**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-```bash
 pip install -r requirements.txt
 playwright install chromium
 uvicorn main:app --reload --port 8000
 ```
 
-#### Step 2. 프론트엔드 설정 (새 터미널)
-
+#### Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
-```
-
-#### Step 3. 접속
-
-- **프론트엔드**: http://localhost:3000
-- **백엔드 API**: http://localhost:8000/docs
-
----
-
-## 🐳 Docker 상세 가이드
-
-### 환경변수 설정
-
-```bash
-cp .env.example .env
-# .env 파일에서 SECRET_KEY 수정
-```
-
-### Docker Compose 명령어
-
-```bash
-# 빌드 및 실행
-docker-compose up --build
-
-# 백그라운드 실행
-docker-compose up -d --build
-
-# 로그 확인
-docker-compose logs -f
-
-# 중지
-docker-compose down
-```
-
-### GPU 서버 배포 (개별 컨테이너)
-
-```bash
-# 백엔드만 빌드 & 실행
-docker build -t musinsa-backend ./backend
-docker run -d -p 8000:8000 musinsa-backend
-
-# 프론트엔드만 빌드 & 실행
-docker build -t musinsa-frontend ./frontend
-docker run -d -p 3000:3000 musinsa-frontend
 ```
 
 ---

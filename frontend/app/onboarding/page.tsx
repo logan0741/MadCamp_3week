@@ -97,7 +97,7 @@ export default function OnboardingPage() {
             }
         };
 
-        initCamera();
+        // initCamera(); // Temporarily disabled for UI work
 
         return () => {
             stopSpeaking();
@@ -264,12 +264,26 @@ export default function OnboardingPage() {
                                 >
                                     다음 →
                                 </button>
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    className="btn btn-secondary btn-full"
+                                    style={{ marginTop: '10px' }}
+                                >
+                                    Skip (Dev Only)
+                                </button>
                             ) : (
                                 <button
                                     onClick={startRecording}
                                     className="btn btn-primary btn-full"
                                 >
                                     촬영 시작
+                                </button>
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    className="btn btn-secondary btn-full"
+                                    style={{ marginTop: '10px' }}
+                                >
+                                    Skip (Dev Only)
                                 </button>
                             )}
                         </div>
