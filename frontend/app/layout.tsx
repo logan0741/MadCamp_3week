@@ -28,7 +28,9 @@ export default function RootLayout({
             </head>
             <body>
                 <div className="mobile-layout-container">
-                    {children}
+                    <div className="mobile-scroll-area">
+                        {children}
+                    </div>
                 </div>
             </body>
         </html>

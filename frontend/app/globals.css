@@ -82,26 +82,58 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: #f0f0f0; /* Default neutral background for desktop */
+  background-color: #f0f0f0;
+  /* Default neutral background for desktop */
   color: var(--color-text-primary);
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  display: flex; /* Center the mobile view */
+  display: flex;
+  /* Center the mobile view */
   justify-content: center;
-  align-items: flex-start; /* Ensure scrolling works properly */
+  align-items: center;
+  /* Center vertically as well */
   margin: 0;
+  overflow: hidden;
+  /* Prevent body scroll, scroll inside phone instead */
 }
 
 .mobile-layout-container {
   width: 100%;
-  max-width: 430px; /* iPhone Pro Max width approx */
-  min-height: 100vh;
-  background-color: var(--color-bg-primary); /* restore app bg color */
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* shadow to separate from bg */
+  max-width: 430px;
+  /* iPhone Pro Max width approx */
+  height: 90vh;
+  /* Dynamic height based on viewport */
+  max-height: 932px;
+  /* iPhone 14 Pro Max height */
+  background-color: var(--color-bg-primary);
+  /* restore app bg color */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  /* shadow to separate from bg */
   position: relative;
+  overflow: hidden;
+  /* Contain scroll area */
+  border-radius: 40px;
+  /* Rounded corners for phone look */
+  transform: scale(1);
+  /* Create containing block for fixed position children */
+}
+
+.mobile-scroll-area {
+  height: 100%;
+  overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+  position: relative;
+}
+
+.mobile-scroll-area::-webkit-scrollbar {
+  display: none;
+  /* Chrome/Safari */
 }
 
 a {
