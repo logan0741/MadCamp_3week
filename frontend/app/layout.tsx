@@ -13,6 +13,8 @@ export const viewport = {
     userScalable: false,
 };
 
+import SplashScreen from '@/components/SplashScreen';
+
 export default function RootLayout({
     children,
 }: {
@@ -28,6 +30,7 @@ export default function RootLayout({
             </head>
             <body>
                 <div className="mobile-layout-container">
+                    <SplashScreen />
                     <div className="mobile-scroll-area">
                         {children}
                     </div>
