@@ -128,6 +128,7 @@ export default function MyPage() {
                                     <span>가격 알림 기준</span>
                                     <span className={styles.arrow}>→</span>
                                 </button>
+
                                 <button
                                     className={`${styles.settingItem} ${styles.danger}`}
                                     onClick={() => {

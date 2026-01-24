@@ -73,7 +73,25 @@ class ProductService:
     
     @staticmethod
     def add_price_log(db: Session, product_id: int, price: int, discount_rate: Optional[int] = None) -> PriceLog:
-        """Add a price log for a product"""
+        """Add or update price log for today (Upsert)"""
+        from datetime import datetime
+        from sqlalchemy import func
+        
+        today = datetime.now().date()
+        
+        # Check for existing log today to ensure 1 log per day
+        existing_log = db.query(PriceLog).filter(
+            PriceLog.product_id == product_id,
+            func.date(PriceLog.captured_at) == today
+        ).first()
+        
+        if existing_log:
+            existing_log.price = price
+            existing_log.discount_rate = discount_rate
+            db.commit()
+            db.refresh(existing_log)
+            return existing_log
+        
         price_log = PriceLog(
             product_id=product_id,
             price=price,
@@ -81,6 +99,7 @@ class ProductService:
         )
         db.add(price_log)
         db.commit()
+        db.refresh(price_log)
         return price_log
     
     @staticmethod
