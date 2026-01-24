@@ -1,0 +1,389 @@
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary);
+}
+
+.cameraContainer {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+.video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    /* Mirror effect */
+}
+
+.silhouette {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.silhouetteSvg {
+    height: 80%;
+    max-height: 500px;
+    color: rgba(255, 77, 0, 0.5);
+    filter: drop-shadow(0 0 10px rgba(255, 77, 0, 0.3));
+}
+
+.recordingIndicator {
+    position: absolute;
+    top: var(--space-lg);
+    right: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(255, 0, 0, 0.8);
+    border-radius: var(--radius-full);
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.recordingDot {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+.instructionPanel {
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+}
+
+.instructionPanel h2 {
+    margin-bottom: var(--space-sm);
+    font-size: 1.5rem;
+}
+
+.instruction {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.progress {
+    width: 100%;
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-sm);
+}
+
+.progressBar {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+
+.progressText {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.successIcon {
+    width: 64px;
+    height: 64px;
+    background: var(--color-success);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    margin: 0 auto var(--space-md);
+    animation: fadeIn 0.5s ease;
+}
+
+.error {
+    padding: var(--space-md);
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    margin-top: var(--space-md);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Speaking indicator */
+.speakingIndicator {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: var(--space-md);
+}
+
+.speakingDot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+}
+
+.speakingDot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.speakingDot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.speakingDot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Step indicator */
+.stepIndicator {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.stepDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-bg-tertiary);
+    transition: all var(--transition-fast);
+}
+
+.stepDot.active {
+    background: var(--color-accent);
+    transform: scale(1.2);
+}
+
+.stepDot.completed {
+    background: var(--color-success);
+}
+
+/* Button row */
+.buttonRow {
+    margin-top: var(--space-md);
+}
+
+/* Pose counter */
+.poseCounter {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin-bottom: var(--space-md);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .instructionPanel {
+        padding: var(--space-md);
+    }
+
+    .instructionPanel h2 {
+        font-size: 1.25rem;
+    }
+
+    .instruction {
+        font-size: 1rem;
+        overflow: hidden;
+        margin-bottom: var(--space-sm);
+    }
+
+    .progressBar {
+        height: 100%;
+        background: var(--gradient-primary);
+        border-radius: var(--radius-full);
+        transition: width 0.3s ease;
+    }
+
+    .progressText {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+    }
+
+    .successIcon {
+        width: 64px;
+        height: 64px;
+        background: var(--color-success);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin: 0 auto var(--space-md);
+        animation: fadeIn 0.5s ease;
+    }
+
+    .error {
+        padding: var(--space-md);
+        background: rgba(255, 71, 87, 0.1);
+        border: 1px solid var(--color-error);
+        border-radius: var(--radius-md);
+        color: var(--color-error);
+        margin-top: var(--space-md);
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    /* Speaking indicator */
+    .speakingIndicator {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: var(--space-md);
+    }
+
+    .speakingDot {
+        width: 8px;
+        height: 8px;
+        background: var(--color-accent);
+        border-radius: 50%;
+        animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    .speakingDot:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .speakingDot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .speakingDot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        80%,
+        100% {
+            transform: scale(0.6);
+            opacity: 0.4;
+        }
+
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* Step indicator */
+    .stepIndicator {
+        display: flex;
+        justify-content: center;
+        gap: var(--space-sm);
+        margin-top: var(--space-lg);
+    }
+
+    .stepDot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-bg-tertiary);
+        transition: all var(--transition-fast);
+    }
+
+    .stepDot.active {
+        background: var(--color-accent);
+        transform: scale(1.2);
+    }
+
+    .stepDot.completed {
+        background: var(--color-success);
+    }
+
+    /* Button row */
+    .buttonRow {
+        margin-top: var(--space-md);
+    }
+
+    /* Pose counter */
+    .poseCounter {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        margin-bottom: var(--space-md);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .instructionPanel {
+            padding: var(--space-md);
+        }
+
+        .instructionPanel h2 {
+            font-size: 1.25rem;
+        }
+
+        .instruction {
+            font-size: 1rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .silhouetteSvg {
+            max-height: 350px;
+        }
+
+        .recordingIndicator {
+            top: var(--space-md);
+            right: var(--space-md);
+            padding: 4px 10px;
+            font-size: 0.75rem;
+        }
+    }
+}

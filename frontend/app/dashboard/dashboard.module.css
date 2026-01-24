@@ -1,0 +1,67 @@
+.page {
+    min-height: 100vh;
+    background: var(--color-bg-secondary);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-md));
+}
+
+.main {
+    padding: var(--space-md);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm);
+}
+
+.addCard {
+    background: var(--color-bg-tertiary);
+    /* Light gray background */
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    /* Fill the grid cell height */
+    min-height: 160px;
+    /* Minimum height to ensure good aspect ratio */
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px dashed var(--color-border);
+}
+
+.addCard:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-text-secondary);
+}
+
+.addIcon {
+    width: 40px;
+    height: 40px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.addText {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.loading,
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    color: var(--color-text-secondary);
+    gap: var(--space-md);
+}
+
+.emptyIcon {
+    font-size: 3rem;
+    margin-bottom: var(--space-sm);
+}
