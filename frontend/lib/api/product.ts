@@ -17,4 +17,7 @@ export const productApi = {
 
     remove: (productId: number) =>
         apiRequest<{ message: string }>(`/products/${productId}`, { method: 'DELETE' }),
+
+    forceUpdateAll: () =>
+        apiRequest<{ message: string; status: string }>('/admin/update-prices', { method: 'POST' }),
 };
