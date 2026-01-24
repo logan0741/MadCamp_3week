@@ -18,8 +18,14 @@ export default function AddProductModal({ onClose, onAdd }: AddProductModalProps
         e.preventDefault();
         setError('');
 
-        if (!url.includes('musinsa.com')) {
-            setError('유효한 무신사 URL을 입력해주세요.');
+        // Allow musinsa.com URLs and OneLink share URLs
+        const isValidUrl = url.includes('musinsa.com') ||
+            url.includes('musinsa.onelink.me') ||
+            url.includes('musinsa.app.link') ||
+            url.includes('onelink.me');
+
+        if (!isValidUrl) {
+            setError('유효한 무신사 URL 또는 공유 링크를 입력해주세요.');
             return;
         }
 
@@ -50,11 +56,11 @@ export default function AddProductModal({ onClose, onAdd }: AddProductModalProps
 
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
-                        <label className="input-label">무신사 상품 URL</label>
+                        <label className="input-label">무신사 상품 URL 또는 공유 링크</label>
                         <input
                             type="url"
                             className="input"
-                            placeholder="https://www.musinsa.com/app/goods/..."
+                            placeholder="URL 또는 공유 링크 붙여넣기"
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                             required
