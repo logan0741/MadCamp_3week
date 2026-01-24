@@ -216,3 +216,30 @@
     font-size: 0.875rem;
     margin-bottom: var(--space-md);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .instructionPanel {
+        padding: var(--space-md);
+    }
+
+    .instructionPanel h2 {
+        font-size: 1.25rem;
+    }
+
+    .instruction {
+        font-size: 1rem;
+        margin-bottom: var(--space-md);
+    }
+
+    .silhouetteSvg {
+        max-height: 350px;
+    }
+
+    .recordingIndicator {
+        top: var(--space-md);
+        right: var(--space-md);
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+}

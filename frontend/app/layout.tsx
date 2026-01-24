@@ -6,6 +6,13 @@ export const metadata: Metadata = {
     description: '무신사 가격 추적 및 3D 가상 피팅 서비스',
 };
 
+export const viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+};
+
 export default function RootLayout({
     children,
 }: {
