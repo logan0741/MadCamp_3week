@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Unity, useUnityContext } from 'react-unity-webgl';
 import { userApi, getToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import BottomNav from '@/components/BottomNav';
@@ -12,6 +13,16 @@ export default function MyPage() {
     const router = useRouter();
     const { user, setUser } = useStore();
     const [isLoading, setIsLoading] = useState(true);
+    const [unityLoaded, setUnityLoaded] = useState(false);
+
+    // Unity WebGL Context Configuration
+    // NOTE: This requires Unity build files in public/unity/Build/
+    const { unityProvider, isLoaded, loadingProgression, addEventListener, removeEventListener } = useUnityContext({
+        loaderUrl: '/unity/Build/Build.loader.js',
+        dataUrl: '/unity/Build/Build.data',
+        frameworkUrl: '/unity/Build/Build.framework.js',
+        codeUrl: '/unity/Build/Build.wasm',
+    });
 
     useEffect(() => {
         const token = getToken();
@@ -22,6 +33,12 @@ export default function MyPage() {
 
         loadUser();
     }, [router]);
+
+    useEffect(() => {
+        if (isLoaded) {
+            setUnityLoaded(true);
+        }
+    }, [isLoaded]);
 
     const loadUser = async () => {
         try {
@@ -37,7 +54,30 @@ export default function MyPage() {
     return (
         <div className={styles.page}>
             {/* Header */}
+<<<<<<< HEAD:frontend/app/mypage/page.tsx
             {/* Header removed for consistent bottom navigation */}
+=======
+            <header className={styles.header}>
+                <div className={styles.headerContent}>
+                    <Link href="/dashboard" className={styles.logo}>
+                        <div className={styles.logoIcon}>M</div>
+                        <span>MUSINSA<strong>Tracker</strong></span>
+                    </Link>
+
+                    <nav className={styles.nav}>
+                        <Link href="/dashboard" className={styles.navLink}>
+                            관심 상품
+                        </Link>
+                        <Link href="/fitting" className={styles.navLink}>
+                            피팅
+                        </Link>
+                        <Link href="/mypage" className={`${styles.navLink} ${styles.active}`}>
+                            마이페이지
+                        </Link>
+                    </nav>
+                </div>
+            </header>
+>>>>>>> anti_back:anti/frontend/app/mypage/page.tsx
 
             <main className={styles.main}>
                 {isLoading ? (
@@ -52,16 +92,22 @@ export default function MyPage() {
                             <div className={styles.avatarContainer}>
                                 {user?.is_avatar_created ? (
                                     <>
-                                        <div className={styles.canvasWrapper} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: '#111' }}>
-                                            <div style={{ fontSize: '4rem', opacity: 0.5 }}>👤</div>
-                                            <p style={{ color: '#888', textAlign: 'center' }}>
-                                                3D 뷰어 로딩 실패<br />
-                                                <span style={{ fontSize: '0.8rem' }}>(라이브러리 호환성 문제로 비활성화됨)</span>
-                                            </p>
-                                        </div>
+                                        {!unityLoaded && (
+                                            <div className={styles.unityLoading}>
+                                                <div className="spinner" />
+                                                <p>3D 아바타 로딩 중... {Math.round(loadingProgression * 100)}%</p>
+                                                <p className={styles.loadingNote}>
+                                                    (로딩이 멈춘다면 Unity 빌드 파일이 있는지 확인해주세요)
+                                                </p>
+                                            </div>
+                                        )}
+                                        <Unity
+                                            unityProvider={unityProvider}
+                                            className={styles.unityCanvas}
+                                            style={{ visibility: unityLoaded ? 'visible' : 'hidden' }}
+                                        />
                                         <div className={styles.viewerNote}>
-                                            * 실제 3D 게이밍 엔진(Unity) 연동을 위해서는 빌드 파일이 필요합니다.<br />
-                                            현재는 정적 이미지가 표시됩니다.
+                                            * Unity WebGL 빌드 파일이 `public/unity/Build` 폴더에 있어야 합니다.
                                         </div>
                                     </>
                                 ) : (
@@ -112,33 +158,6 @@ export default function MyPage() {
                                         {user?.weight ? `${user.weight} kg` : '미입력'}
                                     </span>
                                 </div>
-                            </div>
-                        </section>
-
-                        {/* Settings Section */}
-                        <section className={styles.settingsSection}>
-                            <h2>설정</h2>
-
-                            <div className={styles.settingsList}>
-                                <button className={styles.settingItem}>
-                                    <span>알림 설정</span>
-                                    <span className={styles.arrow}>→</span>
-                                </button>
-                                <button className={styles.settingItem}>
-                                    <span>가격 알림 기준</span>
-                                    <span className={styles.arrow}>→</span>
-                                </button>
-                                <button
-                                    className={`${styles.settingItem} ${styles.danger}`}
-                                    onClick={() => {
-                                        localStorage.removeItem('auth_token');
-                                        localStorage.removeItem('musinsa-tracker-store');
-                                        router.push('/login');
-                                    }}
-                                >
-                                    <span>로그아웃</span>
-                                    <span className={styles.arrow}>→</span>
-                                </button>
                             </div>
                         </section>
                     </>

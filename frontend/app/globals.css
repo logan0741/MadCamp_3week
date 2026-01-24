@@ -1,9 +1,5 @@
-/* ==========================================
-   Musinsa Price Tracker - Global Styles
-   Modern Dark Theme with Musinsa-inspired design
-   ========================================== */
-
 :root {
+<<<<<<< HEAD:frontend/app/globals.css
   /* Colors - Light Theme (Fitme Style) */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f9f9f9;
@@ -70,24 +66,54 @@
 *,
 *::before,
 *::after {
+=======
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #1a1a24;
+  --color-bg-tertiary: #2a2a35;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0a0b0;
+  --color-text-muted: #666677;
+  --color-accent: #ff4d00;
+  --color-border: #333344;
+  --color-error: #ff3333;
+  --color-success: #00cc66;
+
+  --gradient-primary: linear-gradient(135deg, #ff4d00 0%, #ff8800 100%);
+
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+
+  --transition-fast: 0.2s ease;
+}
+
+* {
+>>>>>>> anti_back:anti/frontend/app/globals.css
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html {
-  font-size: 16px;
-  scroll-behavior: smooth;
-}
-
 body {
+<<<<<<< HEAD:frontend/app/globals.css
   font-family: var(--font-sans);
   background-color: #f0f0f0;
   /* Default neutral background for desktop */
+=======
+  background: var(--color-bg-primary);
+>>>>>>> anti_back:anti/frontend/app/globals.css
   color: var(--color-text-primary);
-  line-height: 1.6;
-  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+<<<<<<< HEAD:frontend/app/globals.css
   -moz-osx-font-smoothing: grayscale;
   display: flex;
   /* Center the mobile view */
@@ -134,6 +160,8 @@ body {
 .mobile-scroll-area::-webkit-scrollbar {
   display: none;
   /* Chrome/Safari */
+=======
+>>>>>>> anti_back:anti/frontend/app/globals.css
 }
 
 a {
@@ -142,20 +170,22 @@ a {
 }
 
 button {
-  font-family: inherit;
+  background: none;
+  border: none;
   cursor: pointer;
+<<<<<<< HEAD:frontend/app/globals.css
   border: none;
   background: none;
 }
 
 input,
 textarea {
+=======
+>>>>>>> anti_back:anti/frontend/app/globals.css
   font-family: inherit;
-  border: none;
-  outline: none;
-  background: none;
 }
 
+<<<<<<< HEAD:frontend/app/globals.css
 img {
   max-width: 100%;
   height: auto;
@@ -244,55 +274,33 @@ h4 {
 }
 
 /* Buttons */
+=======
+>>>>>>> anti_back:anti/frontend/app/globals.css
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  font-size: 1rem;
-  font-weight: 600;
+  padding: var(--space-md) var(--space-xl);
   border-radius: var(--radius-md);
+  font-weight: 600;
   transition: all var(--transition-fast);
 }
 
 .btn-primary {
   background: var(--gradient-primary);
   color: white;
-  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
-}
-
-.btn-secondary {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover {
-  background: var(--color-bg-hover);
-  border-color: var(--color-border-light);
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--color-accent);
-  border: 2px solid var(--color-accent);
-}
-
-.btn-outline:hover {
-  background: var(--color-accent);
-  color: white;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .btn-full {
   width: 100%;
 }
 
+<<<<<<< HEAD:frontend/app/globals.css
 /* Inputs */
 .input-group {
   display: flex;
@@ -412,15 +420,18 @@ h4 {
 }
 
 /* Loading Spinner */
+=======
+>>>>>>> anti_back:anti/frontend/app/globals.css
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-accent);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  border-top-color: var(--color-accent);
+  animation: spin 1s linear infinite;
 }
 
+<<<<<<< HEAD:frontend/app/globals.css
 /* Badge */
 .badge {
   display: inline-flex;
@@ -479,5 +490,10 @@ h4 {
 
   .container {
     padding: 0 var(--space-sm);
+=======
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+>>>>>>> anti_back:anti/frontend/app/globals.css
   }
 }

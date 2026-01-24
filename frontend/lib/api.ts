@@ -95,9 +95,16 @@ export interface Product {
     title: string | null;
     brand: string | null;
     thumbnail_url: string | null;
+    image_urls: string[];  // All product images for carousel
+    original_price: number | null;  // Price before discount
     is_garment_modeled: boolean;
     current_price: number | null;
     discount_rate: number | null;
+}
+
+export interface ProductListResponse {
+    products: Product[];
+    total: number;
 }
 
 export interface PriceLog {
@@ -107,7 +114,17 @@ export interface PriceLog {
     captured_at: string;
 }
 
-export interface AITask {
+export interface PriceHistoryResponse {
+    product_id: number;
+    title: string | null;
+    history: PriceLog[];
+    min_price: number | null;
+    max_price: number | null;
+    min_date: string | null;
+    max_date: string | null;
+}
+
+export interface AITaskResponse {
     id: string;
     task_type: string;
     status: string;
@@ -118,10 +135,11 @@ export interface AITask {
 }
 
 // API functions
-export const authApi = {
-    register: (data: { username: string; password: string; height?: number; weight?: number }) =>
-        apiRequest<User>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+export const userApi = {
+    getStatus: () => apiRequest<User>('/user/status'),
+};
 
+export const authApi = {
     login: async (username: string, password: string) => {
         const formData = new URLSearchParams();
         formData.append('username', username);
@@ -140,46 +158,40 @@ export const authApi = {
 
         return response.json() as Promise<{ access_token: string; token_type: string }>;
     },
-};
-
-export const userApi = {
-    getStatus: () => apiRequest<User>('/user/status'),
-    updateProfile: (data: { height?: number; weight?: number }) =>
-        apiRequest<User>('/user/profile', { method: 'PUT', body: JSON.stringify(data) }),
+    register: async (username: string, password: string, height?: number, weight?: number) => {
+        return apiRequest<User>('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, height, weight }),
+        });
+    },
 };
 
 export const productApi = {
-    track: (url: string) =>
-        apiRequest<Product>('/products/track', { method: 'POST', body: JSON.stringify({ url }) }),
-
-    getAll: () =>
-        apiRequest<{ products: Product[]; total: number }>('/products'),
-
-    getHistory: (productId: number) =>
-        apiRequest<{ product_id: number; title: string; history: PriceLog[] }>(`/products/${productId}/history`),
-
-    remove: (productId: number) =>
-        apiRequest<{ message: string }>(`/products/${productId}`, { method: 'DELETE' }),
+    getAll: () => apiRequest<ProductListResponse>('/products'),
+    track: (url: string) => apiRequest<Product>('/products/track', {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+    }),
+    getHistory: (productId: number) => apiRequest<PriceHistoryResponse>(`/products/${productId}/history`),
+    remove: (productId: number) => apiRequest<{ message: string }>(`/products/${productId}`, {
+        method: 'DELETE',
+    }),
 };
 
 export const onboardingApi = {
-    upload: (video: File) => {
+    upload: (file: File) => {
         const formData = new FormData();
-        formData.append('video', video);
+        formData.append('video', file);
         return uploadRequest<{ message: string; task_id: string; status: string }>('/onboarding/upload', formData);
     },
-
-    getTaskStatus: (taskId: string) =>
-        apiRequest<AITask>(`/onboarding/task/${taskId}`),
+    getTaskStatus: (taskId: string) => apiRequest<AITaskResponse>(`/onboarding/task/${taskId}`),
 };
 
 export const aiApi = {
-    requestFitting: (productId: number) =>
-        apiRequest<AITask>(`/ai/fit/${productId}`, { method: 'POST' }),
-
-    getTasks: () =>
-        apiRequest<AITask[]>('/ai/tasks'),
-
-    getTaskStatus: (taskId: string) =>
-        apiRequest<AITask>(`/ai/task/${taskId}`),
+    requestFitting: (productId: number) => apiRequest<AITaskResponse>(`/ai/fit/${productId}`, {
+        method: 'POST',
+    }),
+    getTasks: () => apiRequest<AITaskResponse[]>('/ai/tasks'),
+    getTaskStatus: (taskId: string) => apiRequest<AITaskResponse>(`/ai/task/${taskId}`),
 };
+

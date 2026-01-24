@@ -1,44 +1,17 @@
-/**
- * Zustand store for global state management
- */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User, Product } from '@/lib/api';
+import { User, Product } from './api';
 
-interface AppState {
+interface StoreState {
     user: User | null;
-    products: Product[];
-    isLoading: boolean;
-
     setUser: (user: User | null) => void;
+    products: Product[];
     setProducts: (products: Product[]) => void;
-    addProduct: (product: Product) => void;
-    removeProduct: (productId: number) => void;
-    setLoading: (loading: boolean) => void;
-    logout: () => void;
 }
 
-export const useStore = create<AppState>()(
-    persist(
-        (set) => ({
-            user: null,
-            products: [],
-            isLoading: false,
+export const useStore = create<StoreState>((set) => ({
+    user: null,
+    setUser: (user) => set({ user }),
+    products: [],
+    setProducts: (products) => set({ products }),
+}));
 
-            setUser: (user) => set({ user }),
-            setProducts: (products) => set({ products }),
-            addProduct: (product) => set((state) => ({
-                products: [...state.products, product]
-            })),
-            removeProduct: (productId) => set((state) => ({
-                products: state.products.filter((p) => p.id !== productId)
-            })),
-            setLoading: (isLoading) => set({ isLoading }),
-            logout: () => set({ user: null, products: [] }),
-        }),
-        {
-            name: 'musinsa-tracker-store',
-            partialize: (state) => ({ user: state.user }),
-        }
-    )
-);

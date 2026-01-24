@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-    title: 'Musinsa Price Tracker & Virtual Try-On',
-    description: '무신사 가격 추적 및 3D 가상 피팅 서비스',
+    title: 'MUSINSA Tracker',
+    description: 'Track prices and create your 3D avatar',
 };
 
 export const viewport = {
@@ -20,6 +20,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="ko">
+<<<<<<< HEAD:frontend/app/layout.tsx
             <head>
                 <link
                     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
@@ -33,6 +34,9 @@ export default function RootLayout({
                     </div>
                 </div>
             </body>
+=======
+            <body>{children}</body>
+>>>>>>> anti_back:anti/frontend/app/layout.tsx
         </html>
     );
 }

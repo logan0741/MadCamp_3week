@@ -18,8 +18,13 @@ export default function AddProductModal({ onClose, onAdd }: AddProductModalProps
         e.preventDefault();
         setError('');
 
-        if (!url.includes('musinsa.com')) {
-            setError('유효한 무신사 URL을 입력해주세요.');
+        // Accept musinsa.com URLs and onelink.me share URLs
+        const isMusinsaUrl = url.includes('musinsa.com') ||
+            url.includes('musinsa.onelink.me') ||
+            url.includes('musinsa.app.link');
+
+        if (!isMusinsaUrl) {
+            setError('유효한 무신사 URL 또는 공유 링크를 입력해주세요.');
             return;
         }
 

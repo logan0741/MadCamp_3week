@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List
 import re
+import json
 
 from database import get_db
 from models import User, Product, UserInterest, PriceLog
@@ -20,7 +21,16 @@ router = APIRouter()
 
 
 def extract_musinsa_id(url: str) -> str:
-    """Extract product ID from Musinsa URL"""
+    """Extract product ID from Musinsa URL or return placeholder for OneLink URLs"""
+    
+    # Handle OneLink URLs - these will be resolved by the scraper
+    if 'onelink.me' in url or 'musinsa.app.link' in url:
+        # Extract a temporary ID from the OneLink path
+        match = re.search(r'/([A-Za-z0-9]+)/?$', url)
+        if match:
+            return f"onelink_{match.group(1)}"
+        return f"onelink_{hash(url) % 1000000}"
+    
     # Handle various Musinsa URL formats
     patterns = [
         r'musinsa\.com/app/goods/(\d+)',
@@ -36,7 +46,7 @@ def extract_musinsa_id(url: str) -> str:
         if match:
             return match.group(1)
     
-    raise ValueError("Could not extract product ID from URL")
+    raise ValueError("Could not extract product ID from URL. Use a Musinsa product URL or share link.")
 
 
 @router.post("/track", response_model=ProductResponse)
@@ -53,22 +63,38 @@ async def track_product(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    # Check if product already exists
+    # For OneLink URLs, we need to scrape first to get the real product ID
+    is_onelink = musinsa_id.startswith('onelink_')
+    
+    if is_onelink:
+        # Scrape first to resolve OneLink and get real product info
+        try:
+            product_info = await scrape_musinsa_product(request.url, musinsa_id)
+            # Use the real product ID from scraper if available
+            if product_info.get("product_id") and not product_info["product_id"].startswith('onelink_'):
+                musinsa_id = product_info["product_id"]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Could not resolve share link: {str(e)}")
+    
+    # Check if product already exists (with resolved ID)
     product = db.query(Product).filter(Product.musinsa_id == musinsa_id).first()
     
     if not product:
-        # Scrape product information
-        try:
-            product_info = await scrape_musinsa_product(request.url, musinsa_id)
-        except Exception as e:
-            # If scraping fails, create with minimal info
-            product_info = {
-                "title": f"상품 {musinsa_id}",
-                "brand": None,
-                "thumbnail_url": None,
-                "price": None,
-                "discount_rate": None
-            }
+        # Scrape product information (if not already done for OneLink)
+        if not is_onelink:
+            try:
+                product_info = await scrape_musinsa_product(request.url, musinsa_id)
+            except Exception as e:
+                # If scraping fails, create with minimal info
+                product_info = {
+                    "title": f"상품 {musinsa_id}",
+                    "brand": None,
+                    "thumbnail_url": None,
+                    "image_urls": [],
+                    "price": None,
+                    "original_price": None,
+                    "discount_rate": None
+                }
         
         # Create new product
         product = Product(
@@ -76,7 +102,9 @@ async def track_product(
             url=request.url,
             title=product_info.get("title"),
             brand=product_info.get("brand"),
-            thumbnail_url=product_info.get("thumbnail_url")
+            thumbnail_url=product_info.get("thumbnail_url"),
+            image_urls=json.dumps(product_info.get("image_urls", [])),
+            original_price=product_info.get("original_price")
         )
         db.add(product)
         db.commit()
@@ -112,6 +140,14 @@ async def track_product(
         PriceLog.product_id == product.id
     ).order_by(desc(PriceLog.captured_at)).first()
     
+    # Parse image_urls from JSON
+    image_urls = []
+    if product.image_urls:
+        try:
+            image_urls = json.loads(product.image_urls)
+        except:
+            pass
+    
     response = ProductResponse(
         id=product.id,
         musinsa_id=product.musinsa_id,
@@ -119,6 +155,8 @@ async def track_product(
         title=product.title,
         brand=product.brand,
         thumbnail_url=product.thumbnail_url,
+        image_urls=image_urls,
+        original_price=product.original_price,
         is_garment_modeled=product.is_garment_modeled,
         current_price=latest_price.price if latest_price else None,
         discount_rate=latest_price.discount_rate if latest_price else None
@@ -147,6 +185,14 @@ async def get_user_products(
             PriceLog.product_id == product.id
         ).order_by(desc(PriceLog.captured_at)).first()
         
+        # Parse image_urls from JSON
+        image_urls = []
+        if product.image_urls:
+            try:
+                image_urls = json.loads(product.image_urls)
+            except:
+                pass
+        
         products.append(ProductResponse(
             id=product.id,
             musinsa_id=product.musinsa_id,
@@ -154,6 +200,8 @@ async def get_user_products(
             title=product.title,
             brand=product.brand,
             thumbnail_url=product.thumbnail_url,
+            image_urls=image_urls,
+            original_price=product.original_price,
             is_garment_modeled=product.is_garment_modeled,
             current_price=latest_price.price if latest_price else None,
             discount_rate=latest_price.discount_rate if latest_price else None
@@ -190,10 +238,28 @@ async def get_price_history(
         for log in price_logs
     ]
     
+    # Calculate min/max prices and their dates
+    min_price = None
+    max_price = None
+    min_date = None
+    max_date = None
+    
+    if price_logs:
+        min_log = min(price_logs, key=lambda x: x.price)
+        max_log = max(price_logs, key=lambda x: x.price)
+        min_price = min_log.price
+        max_price = max_log.price
+        min_date = str(min_log.captured_at)
+        max_date = str(max_log.captured_at)
+    
     return PriceHistoryResponse(
         product_id=product_id,
         title=product.title,
-        history=history
+        history=history,
+        min_price=min_price,
+        max_price=max_price,
+        min_date=min_date,
+        max_date=max_date
     )
 
 
