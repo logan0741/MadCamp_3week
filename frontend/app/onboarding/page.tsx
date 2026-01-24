@@ -97,12 +97,14 @@ export default function OnboardingPage() {
             }
         };
 
-        initCamera();
+        // initCamera(); // Temporarily disabled for UI work
+
+        const videoElement = videoRef.current;
 
         return () => {
             stopSpeaking();
-            if (videoRef.current?.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
+            if (videoElement?.srcObject) {
+                const stream = videoElement.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
         };
@@ -258,19 +260,37 @@ export default function OnboardingPage() {
 
                         <div className={styles.buttonRow}>
                             {introStep < INTRO_STEPS.length - 1 ? (
-                                <button
-                                    onClick={handleNextIntro}
-                                    className="btn btn-primary btn-full"
-                                >
-                                    다음 →
-                                </button>
+                                <>
+                                    <button
+                                        onClick={handleNextIntro}
+                                        className="btn btn-primary btn-full"
+                                    >
+                                        다음 →
+                                    </button>
+                                    <button
+                                        onClick={() => router.push('/dashboard')}
+                                        className="btn btn-secondary btn-full"
+                                        style={{ marginTop: '10px' }}
+                                    >
+                                        Skip (Dev Only)
+                                    </button>
+                                </>
                             ) : (
-                                <button
-                                    onClick={startRecording}
-                                    className="btn btn-primary btn-full"
-                                >
-                                    촬영 시작
-                                </button>
+                                <>
+                                    <button
+                                        onClick={startRecording}
+                                        className="btn btn-primary btn-full"
+                                    >
+                                        촬영 시작
+                                    </button>
+                                    <button
+                                        onClick={() => router.push('/dashboard')}
+                                        className="btn btn-secondary btn-full"
+                                        style={{ marginTop: '10px' }}
+                                    >
+                                        Skip (Dev Only)
+                                    </button>
+                                </>
                             )}
                         </div>
 

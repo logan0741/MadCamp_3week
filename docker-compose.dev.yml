@@ -1,0 +1,81 @@
+volumes:
+  postgres_data_dev:
+
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: musinsa-db-dev
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=musinsa
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: musinsa-backend-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/musinsa
+      - SECRET_KEY=${SECRET_KEY:-dev_secret_key}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    volumes:
+      # Mount source code for hot reload
+      - ./backend:/app
+      # Avoid overwriting container's installed dependencies with local ones (if any)
+      # But since we use same image, it's safer to not mount venv if it exists locally
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: deps # Use deps or builder stage if possible, but for dev we usually just need node
+    # Actually, for Next.js hot reload in Docker, we need a slightly different approach or just run 'npm run dev'
+    # But standard Dockerfile is multi-stage for production build.
+    # We should override command to run dev server.
+    # However, image might not have devDependencies if we target 'runner'.
+    # So we'll use a simple node image or target 'deps' and run install.
+    # Let's define a simpler service for dev inheriting build context but running dev server.
+    image: node:20-alpine
+    working_dir: /app
+    container_name: musinsa-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000 # Browser access (client-side)
+      - API_URL=http://backend:8000 # Server-side (nextjs container -> backend container)
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

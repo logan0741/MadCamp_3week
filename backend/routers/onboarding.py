@@ -110,12 +110,13 @@ async def upload_onboarding_video(
     
     # Add background task for processing
     # Note: For actual async processing in production, use Celery
+    from database import SQLALCHEMY_DATABASE_URL
     background_tasks.add_task(
         process_avatar_generation,
         task.id,
         file_path,
         current_user.id,
-        "sqlite:///./musinsa_tracker.db"
+        SQLALCHEMY_DATABASE_URL
     )
     
     return OnboardingUploadResponse(

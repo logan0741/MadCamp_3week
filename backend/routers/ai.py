@@ -114,11 +114,12 @@ async def request_garment_fitting(
     os.makedirs(garment_dir, exist_ok=True)
     
     # Start background processing
+    from database import SQLALCHEMY_DATABASE_URL
     background_tasks.add_task(
         process_garment_generation,
         task.id,
         product_id,
-        "sqlite:///./musinsa_tracker.db"
+        SQLALCHEMY_DATABASE_URL
     )
     
     return task
