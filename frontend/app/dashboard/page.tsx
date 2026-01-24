@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { productApi, getToken, Product } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Plus } from 'lucide-react';
-import ProductCard from '@/components/ProductCard';
-import AddProductModal from '@/components/AddProductModal';
-import TopBar from '@/components/TopBar';
-import BottomNav from '@/components/BottomNav';
+import ProductCard from '@/components/product/ProductCard';
+import AddProductModal from '@/components/product/AddProductModal';
+import TopBar from '@/components/layout/TopBar';
+import BottomNav from '@/components/layout/BottomNav';
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {

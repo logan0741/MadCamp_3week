@@ -13,7 +13,7 @@ export const viewport = {
     userScalable: false,
 };
 
-import SplashScreen from '@/components/SplashScreen';
+import SplashScreen from '@/components/common/SplashScreen';
 
 export default function RootLayout({
     children,
