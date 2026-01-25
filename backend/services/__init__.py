@@ -1,4 +1,12 @@
 """
-Services package initialization
+Services package - Business logic layer
 """
-from . import scraper
+from services.auth_service import AuthService
+from services.user_service import UserService
+from services.product_service import ProductService
+
+__all__ = [
+    "AuthService",
+    "UserService",
+    "ProductService",
+]

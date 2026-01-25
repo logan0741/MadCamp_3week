@@ -71,6 +71,7 @@
     max-width: 600px;
     margin: 0 auto;
     padding: var(--space-xl) var(--space-lg);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-xl));
 }
 
 .loading {

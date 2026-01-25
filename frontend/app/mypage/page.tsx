@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userApi, getToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
+import BottomNav from '@/components/layout/BottomNav';
 import styles from './mypage.module.css';
 
 export default function MyPage() {
@@ -36,23 +37,7 @@ export default function MyPage() {
     return (
         <div className={styles.page}>
             {/* Header */}
-            <header className={styles.header}>
-                <div className={styles.headerContent}>
-                    <Link href="/dashboard" className={styles.logo}>
-                        <div className={styles.logoIcon}>M</div>
-                        <span>MUSINSA<strong>Tracker</strong></span>
-                    </Link>
-
-                    <nav className={styles.nav}>
-                        <Link href="/dashboard" className={styles.navLink}>
-                            관심 상품
-                        </Link>
-                        <Link href="/mypage" className={`${styles.navLink} ${styles.active}`}>
-                            마이페이지
-                        </Link>
-                    </nav>
-                </div>
-            </header>
+            {/* Header removed for consistent bottom navigation */}
 
             <main className={styles.main}>
                 {isLoading ? (
@@ -143,6 +128,7 @@ export default function MyPage() {
                                     <span>가격 알림 기준</span>
                                     <span className={styles.arrow}>→</span>
                                 </button>
+
                                 <button
                                     className={`${styles.settingItem} ${styles.danger}`}
                                     onClick={() => {
@@ -159,6 +145,8 @@ export default function MyPage() {
                     </>
                 )}
             </main>
+
+            <BottomNav />
         </div>
     );
 }

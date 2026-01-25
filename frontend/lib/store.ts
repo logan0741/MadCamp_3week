@@ -3,7 +3,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, Product } from '@/lib/api';
+import type { User, Product } from '@/lib/types';
 
 interface AppState {
     user: User | null;

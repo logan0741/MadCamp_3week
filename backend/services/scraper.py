@@ -1,201 +1,229 @@
 """
-Musinsa Product Scraper using Playwright
+Musinsa Product Scraper using Playwright Network Interception
+- Handles OneLink share URLs (musinsa.onelink.me)
+- Extracts data from Next.js __NEXT_DATA__ for reliability
+- Bypasses bot detection with realistic user simulation
 """
-from playwright.async_api import async_playwright
-from typing import Dict, Optional
+from playwright.async_api import async_playwright, Response
+from typing import Dict, Optional, List
 import re
+import json
+import asyncio
 
 
-async def scrape_musinsa_product(url: str, musinsa_id: str) -> Dict:
+async def resolve_onelink_url(url: str) -> str:
     """
-    Scrape product information from Musinsa website
+    Resolve Musinsa OneLink share URL to actual product URL
+    """
+    if 'onelink.me' not in url and 'musinsa.app.link' not in url:
+        return url
     
-    Args:
-        url: Full product URL
-        musinsa_id: Extracted product ID
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(
+                user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+            )
+            page = await context.new_page()
+            
+            await page.goto(url, wait_until='domcontentloaded', timeout=15000)
+            final_url = page.url
+            
+            await browser.close()
+            return final_url
+    except Exception as e:
+        print(f"Failed to resolve OneLink URL: {e}")
+        return url
+
+
+def extract_musinsa_id_from_url(url: str) -> Optional[str]:
+    """Extract product ID from various Musinsa URL formats"""
+    patterns = [
+        r'/products/(\d+)',
+        r'/app/goods/(\d+)',
+        r'goodsNo=(\d+)',
+        r'/(\d+)\?',
+        r'/(\d+)$'
+    ]
     
-    Returns:
-        Dict with title, brand, thumbnail_url, price, discount_rate
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
+    return None
+
+
+async def scrape_musinsa_with_next_data(url: str, musinsa_id: str) -> Dict:
+    """
+    Scrape Musinsa product using Next.js __NEXT_DATA__
+    
+    This is the most reliable method - Next.js apps embed all SSR data
+    in a script tag that we can easily parse.
     """
     result = {
         "title": None,
         "brand": None,
         "thumbnail_url": None,
+        "image_urls": [],
         "price": None,
-        "discount_rate": None
+        "original_price": None,
+        "discount_rate": None,
+        "product_id": musinsa_id
     }
     
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+                locale='ko-KR'
             )
             page = await context.new_page()
             
-            # Navigate to product page
+            # Navigate with realistic behavior
             await page.goto(url, wait_until='networkidle', timeout=30000)
             
-            # Wait for main content
-            await page.wait_for_selector('.product_title, .product-detail__title', timeout=10000)
+            # Wait for content to load
+            await asyncio.sleep(2)
             
-            # Extract title
-            title_selectors = [
-                '.product_title__name',
-                '.product-detail__name',
-                '.product_title',
-                'h1.title'
-            ]
-            for selector in title_selectors:
+            # Try to extract __NEXT_DATA__ - the goldmine!
+            try:
+                next_data_script = await page.query_selector('script#__NEXT_DATA__')
+                if next_data_script:
+                    next_data_text = await next_data_script.inner_text()
+                    next_data = json.loads(next_data_text)
+                    
+                    # Navigate to product data
+                    page_props = next_data.get("props", {}).get("pageProps", {})
+                    meta = page_props.get("meta", {}).get("data", {})
+                    
+                    if meta:
+                        # Extract product info
+                        result["product_id"] = str(meta.get("goodsNo", musinsa_id))
+                        result["title"] = meta.get("goodsNm")
+                        
+                        # Brand info
+                        brand_info = meta.get("brandInfo", {})
+                        result["brand"] = brand_info.get("brandName") or meta.get("brand")
+                        
+                        # Price info from goodsPrice
+                        price_info = meta.get("goodsPrice", {})
+                        result["price"] = price_info.get("salePrice")
+                        result["original_price"] = price_info.get("normalPrice")
+                        result["discount_rate"] = price_info.get("discountRate")
+                        
+                        # Thumbnail
+                        thumbnail = meta.get("thumbnailImageUrl", "")
+                        if thumbnail:
+                            if not thumbnail.startswith("http"):
+                                thumbnail = "https://image.msscdn.net" + thumbnail
+                            result["thumbnail_url"] = thumbnail
+                        
+                        # All product images
+                        goods_images = meta.get("goodsImages", [])
+                        for img in goods_images:
+                            img_url = img.get("imageUrl", "")
+                            if img_url:
+                                if not img_url.startswith("http"):
+                                    img_url = "https://image.msscdn.net" + img_url
+                                result["image_urls"].append(img_url)
+                        
+                        # If no gallery images, use thumbnail
+                        if not result["image_urls"] and result["thumbnail_url"]:
+                            result["image_urls"] = [result["thumbnail_url"]]
+                        
+                        print(f"✅ Extracted from __NEXT_DATA__: {result['title']}")
+                        
+            except Exception as e:
+                print(f"Failed to parse __NEXT_DATA__: {e}")
+            
+            # Fallback to DOM scraping if __NEXT_DATA__ failed
+            if not result["title"]:
+                print("Falling back to DOM scraping...")
+                
+                # Title from meta og:title or page title
                 try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        result["title"] = await element.inner_text()
-                        break
+                    og_title = await page.query_selector('meta[property="og:title"]')
+                    if og_title:
+                        title = await og_title.get_attribute('content')
+                        if title:
+                            # Clean up title (remove " - 무신사" suffix)
+                            result["title"] = re.sub(r'\s*-\s*사이즈.*$', '', title)
                 except:
-                    continue
-            
-            # Extract brand
-            brand_selectors = [
-                '.product_title__brand',
-                '.product-detail__brand',
-                '.brand_name'
-            ]
-            for selector in brand_selectors:
+                    pass
+                
+                # Price from visible elements
                 try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        result["brand"] = await element.inner_text()
-                        break
-                except:
-                    continue
-            
-            # Extract thumbnail
-            img_selectors = [
-                '.product_gallery_item img',
-                '.product-detail__image img',
-                '.product_image img',
-                '.swiper-slide img'
-            ]
-            for selector in img_selectors:
-                try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        result["thumbnail_url"] = await element.get_attribute('src')
-                        if result["thumbnail_url"] and not result["thumbnail_url"].startswith('http'):
-                            result["thumbnail_url"] = 'https:' + result["thumbnail_url"]
-                        break
-                except:
-                    continue
-            
-            # Extract price
-            price_selectors = [
-                '.product_price__price',
-                '.product-detail__price',
-                '.price_now',
-                '.product_price span:last-child'
-            ]
-            for selector in price_selectors:
-                try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        price_text = await element.inner_text()
-                        # Extract numeric value
-                        price_match = re.search(r'[\d,]+', price_text)
+                    price_elements = await page.query_selector_all('[class*="price"], [class*="Price"]')
+                    for el in price_elements:
+                        text = await el.inner_text()
+                        price_match = re.search(r'([\d,]+)원?', text)
                         if price_match:
-                            result["price"] = int(price_match.group().replace(',', ''))
-                        break
+                            price_val = int(price_match.group(1).replace(',', ''))
+                            if price_val > 0:
+                                if not result["price"] or price_val < result["price"]:
+                                    result["price"] = price_val
+                                if price_val > (result["original_price"] or 0):
+                                    result["original_price"] = price_val
                 except:
-                    continue
-            
-            # Extract discount rate
-            discount_selectors = [
-                '.product_price__rate',
-                '.product-detail__discount',
-                '.discount_rate'
-            ]
-            for selector in discount_selectors:
-                try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        discount_text = await element.inner_text()
-                        discount_match = re.search(r'(\d+)%?', discount_text)
-                        if discount_match:
-                            result["discount_rate"] = int(discount_match.group(1))
-                        break
-                except:
-                    continue
+                    pass
             
             await browser.close()
             
     except Exception as e:
         print(f"Scraping error for {url}: {e}")
-        # Return partial results even on error
+    
+    return result
+
+
+async def scrape_musinsa_product(url: str, musinsa_id: str) -> Dict:
+    """
+    Main entry point for Musinsa scraping
+    Handles OneLink URLs and uses Next.js data extraction
+    """
+    resolved_url = url
+    
+    # Resolve OneLink URLs first
+    if 'onelink.me' in url or 'musinsa.app.link' in url:
+        resolved_url = await resolve_onelink_url(url)
+        
+        # Extract real product ID from resolved URL
+        real_id = extract_musinsa_id_from_url(resolved_url)
+        if real_id:
+            musinsa_id = real_id
+    else:
+        # Ensure we have the correct ID
+        extracted_id = extract_musinsa_id_from_url(url)
+        if extracted_id:
+            musinsa_id = extracted_id
+    
+    # Use the Next.js data scraper
+    result = await scrape_musinsa_with_next_data(resolved_url, musinsa_id)
+    
+    # Ensure product_id is set
+    result["product_id"] = musinsa_id
     
     return result
 
 
 async def scrape_current_price(url: str) -> Optional[Dict]:
-    """
-    Scrape only the current price for daily price logging
-    
-    Returns:
-        Dict with price and discount_rate, or None if failed
-    """
+    """Quick price check for daily logging"""
     try:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            )
-            page = await context.new_page()
-            
-            await page.goto(url, wait_until='domcontentloaded', timeout=20000)
-            await page.wait_for_timeout(2000)  # Wait for dynamic content
-            
-            result = {"price": None, "discount_rate": None}
-            
-            # Try to get price
-            price_selectors = [
-                '.product_price__price',
-                '.product-detail__price',
-                '.price_now'
-            ]
-            for selector in price_selectors:
-                try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        price_text = await element.inner_text()
-                        price_match = re.search(r'[\d,]+', price_text)
-                        if price_match:
-                            result["price"] = int(price_match.group().replace(',', ''))
-                        break
-                except:
-                    continue
-            
-            # Try to get discount
-            discount_selectors = [
-                '.product_price__rate',
-                '.product-detail__discount'
-            ]
-            for selector in discount_selectors:
-                try:
-                    element = await page.query_selector(selector)
-                    if element:
-                        discount_text = await element.inner_text()
-                        discount_match = re.search(r'(\d+)%?', discount_text)
-                        if discount_match:
-                            result["discount_rate"] = int(discount_match.group(1))
-                        break
-                except:
-                    continue
-            
-            await browser.close()
-            
-            if result["price"]:
-                return result
-            return None
-            
+        # Resolve OneLink if needed
+        if 'onelink.me' in url:
+            url = await resolve_onelink_url(url)
+        
+        result = await scrape_musinsa_with_next_data(url, "")
+        
+        if result.get("price"):
+            return {
+                "price": result["price"],
+                "discount_rate": result.get("discount_rate")
+            }
+        return None
+        
     except Exception as e:
         print(f"Price scraping error: {e}")
         return None
