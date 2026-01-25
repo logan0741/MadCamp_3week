@@ -12,32 +12,33 @@
 MadCamp_3week/
 ├── backend/                 # FastAPI 백엔드 (사용자 인증, 상품 관리)
 ├── frontend/                # Next.js 프론트엔드 (React + TypeScript)
-├── ai-pipeline/             # AI 가상 피팅 파이프라인 (신규 구현)
+├── ai-pipeline/             # AI 가상 피팅 파이프라인
 │   ├── api/                 # FastAPI AI 서버
 │   │   ├── main.py
 │   │   └── routers/
-│   │       └── vton.py      # VTON 엔드포인트 (동기 + 비동기)
+│   │       ├── vton.py      # 2D VTON 엔드포인트
+│   │       └── avatar.py    # 3D 아바타 엔드포인트 (NEW)
 │   ├── models/              # AI 모델 래퍼
-│   │   └── vton/
-│   │       ├── idm_vton.py  # IDM-VTON 모델
-│   │       ├── preprocessor.py
-│   │       └── postprocessor.py
+│   │   ├── vton/            # 2D Virtual Try-On
+│   │   │   ├── idm_vton.py
+│   │   │   ├── preprocessor.py
+│   │   │   └── postprocessor.py
+│   │   ├── avatar/          # 3D 아바타 생성 (NEW)
+│   │   │   ├── shapy_wrapper.py    # SHAPY 신체 추정
+│   │   │   └── smplx_wrapper.py    # SMPL-X 메시 생성
+│   │   ├── garment/         # 옷 시뮬레이션 (NEW)
+│   │   │   ├── snug_wrapper.py     # SNUG 시뮬레이션
+│   │   │   └── garment_types.py    # 옷 종류 정의
+│   │   └── 3d/              # 외부 라이브러리 (NEW)
+│   │       ├── shapy/       # SHAPY 원본
+│   │       └── snug/        # SNUG 원본
 │   ├── workers/             # Celery 작업 큐
 │   │   ├── celery_app.py
 │   │   ├── vram_manager.py
 │   │   └── tasks/
-│   │       └── vton_tasks.py  # 비동기 VTON 작업
+│   │       └── vton_tasks.py
 │   ├── tests/               # 테스트 스위트
-│   │   ├── test_vton_api.py
-│   │   ├── test_celery_tasks.py
-│   │   └── test_integration.py
 │   ├── docs/                # 문서 및 예시
-│   │   ├── INTEGRATION_GUIDE.md
-│   │   ├── IMPLEMENTATION_STATUS.md
-│   │   └── examples/
-│   │       ├── frontend-integration.tsx
-│   │       ├── backend-proxy.py
-│   │       └── test_api.sh
 │   └── config.py
 └── docker-compose.yml
 ```
@@ -408,19 +409,25 @@ bash docs/examples/test_api.sh async
 | GET | `/health` | 헬스 체크 |
 | GET | `/vram-status` | GPU VRAM 상태 조회 |
 
-### 동기 VTON
+### 2D VTON (Virtual Try-On)
 
 | Method | Path | 설명 |
 |--------|------|------|
 | POST | `/api/vton/try-on` | 동기 가상 피팅 (즉시 응답) |
-
-### 비동기 VTON
-
-| Method | Path | 설명 |
-|--------|------|------|
 | POST | `/api/vton/try-on-async` | 비동기 가상 피팅 (백그라운드) |
 | POST | `/api/vton/batch-async` | 배치 가상 피팅 |
 | GET | `/api/vton/task/{task_id}` | 작업 상태 조회 |
+
+### 3D 아바타 (NEW)
+
+| Method | Path | 설명 |
+|--------|------|------|
+| POST | `/api/avatar/generate` | 이미지/치수에서 3D 아바타 생성 |
+| POST | `/api/avatar/garment/simulate` | 아바타에 옷 시뮬레이션 |
+| POST | `/api/avatar/combined` | 아바타+옷 통합 생성 |
+| GET | `/api/avatar/garments/types` | 사용 가능한 옷 종류 조회 |
+| GET | `/api/avatar/{avatar_id}` | 아바타 정보 조회 |
+| DELETE | `/api/avatar/{avatar_id}` | 아바타 삭제 |
 
 ---
 
@@ -463,6 +470,119 @@ get_vton_model()
 
 ---
 
+## 3D 아바타 생성 파이프라인 (NEW)
+
+### 개요
+SMPL-X 기반 3D 아바타 생성 및 옷 시뮬레이션 파이프라인입니다.
+
+### 사용 라이브러리
+- **SHAPY** (https://github.com/muelea/shapy): 이미지에서 신체 형상(SMPL-X 파라미터) 추정
+- **SNUG** (https://github.com/isantesteban/snug): 신경망 기반 옷 시뮬레이션
+- **SMPL-X**: 파라메트릭 인체 모델
+
+### API 엔드포인트
+
+#### 1. 아바타 생성
+```bash
+# 이미지에서 아바타 생성
+POST /api/avatar/generate
+{
+  "image_url": "https://example.com/person.jpg",
+  "output_format": "glb"
+}
+
+# 신체 치수에서 아바타 생성
+POST /api/avatar/generate
+{
+  "measurements": {
+    "height": 1.75,
+    "weight": 70,
+    "chest": 95,
+    "waist": 80,
+    "hips": 95,
+    "gender": "male"
+  },
+  "output_format": "glb"
+}
+```
+
+**응답:**
+```json
+{
+  "success": true,
+  "avatar_id": "uuid",
+  "mesh_url": "http://cdn/outputs/avatars/avatar_uuid.glb",
+  "betas": [0.1, -0.2, ...],
+  "measurements": {"height": 1.75, ...},
+  "processing_time_seconds": 2.5
+}
+```
+
+#### 2. 옷 시뮬레이션
+```bash
+POST /api/avatar/garment/simulate
+{
+  "avatar_id": "uuid",
+  "garment_type": "tshirt",
+  "output_format": "glb"
+}
+```
+
+**응답:**
+```json
+{
+  "success": true,
+  "garment_mesh_url": "http://cdn/outputs/garments/garment_uuid.glb",
+  "combined_mesh_url": "http://cdn/outputs/garments/combined_uuid.glb",
+  "processing_time_seconds": 1.2
+}
+```
+
+#### 3. 통합 아바타+옷 생성
+```bash
+POST /api/avatar/combined
+{
+  "person_image_url": "https://example.com/person.jpg",
+  "garment_type": "tshirt",
+  "output_format": "glb"
+}
+```
+
+#### 4. 사용 가능한 옷 종류 조회
+```bash
+GET /api/avatar/garments/types
+```
+
+**응답:**
+```json
+{
+  "garments": [
+    {"type": "tshirt", "name": "T-Shirt"},
+    {"type": "tank", "name": "Tank Top"},
+    {"type": "dress", "name": "Dress"},
+    {"type": "pants", "name": "Pants"},
+    {"type": "shorts", "name": "Shorts"}
+  ]
+}
+```
+
+### 파이프라인 아키텍처
+```
+1. 이미지 입력 → SHAPY → SMPL-X 파라미터 (betas)
+2. SMPL-X 파라미터 → SMPL-X 모델 → 3D 인체 메시
+3. 3D 인체 메시 + 옷 템플릿 → SNUG → 3D 옷 메시
+4. 인체 메시 + 옷 메시 → 통합 3D 모델 (GLB/OBJ)
+```
+
+### 모델 설치 (필요)
+SHAPY와 SNUG는 추가 모델 파일이 필요합니다:
+
+1. **SMPL-X 모델**: https://smpl-x.is.tue.mpg.de 에서 다운로드
+2. **SHAPY 학습 모델**: https://shapy.is.tue.mpg.de 에서 다운로드
+3. **SMPL 모델** (SNUG용): https://smpl.is.tue.mpg.de 에서 다운로드
+
+---
+
 ## 다음 단계 (TODO)
 
 ### 즉시 구현 가능
@@ -470,9 +590,12 @@ get_vton_model()
 - [ ] 결과 이미지 CDN 업로드
 - [ ] WebSocket 실시간 진행률 전송
 - [ ] Docker Compose에 AI pipeline 추가
+- [x] 3D 아바타 생성 API 엔드포인트
+- [ ] SMPL-X 모델 파일 다운로드 및 설정
+- [ ] SHAPY 학습 모델 다운로드 및 설정
 
 ### 중장기 계획
-- [ ] 3D 아바타 생성 파이프라인
+- [x] 3D 아바타 생성 파이프라인 (기본 구조)
 - [ ] Unity WebGL 통합
 - [ ] 모델 A/B 테스트 프레임워크
 - [ ] 프로덕션 배포 (Kubernetes)
