@@ -18,7 +18,7 @@ from loguru import logger
 import time
 
 from config import settings, print_config_summary
-from api.routers import vton
+from api.routers import vton, avatar
 
 
 # ============================================
@@ -223,9 +223,11 @@ app.include_router(
     tags=["Virtual Try-On"],
 )
 
-# TODO: Add other routers
-# app.include_router(avatar.router, prefix="/api/avatar", tags=["Avatar"])
-# app.include_router(garment.router, prefix="/api/garment", tags=["Garment"])
+app.include_router(
+    avatar.router,
+    prefix="/api/avatar",
+    tags=["3D Avatar"],
+)
 
 
 # ============================================
