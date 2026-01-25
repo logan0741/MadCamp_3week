@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     # 3DGS
     gaussians_checkpoint_path: Optional[Path] = Field(default=None, env="GAUSSIANS_CHECKPOINT_PATH")
 
+    # SHAPY (Body shape estimation)
+    shapy_model_path: Optional[Path] = Field(default=None, env="SHAPY_MODEL_PATH")
+
+    # SNUG (Garment simulation)
+    snug_model_path: Optional[Path] = Field(default=None, env="SNUG_MODEL_PATH")
+
     # ============================================
     # File Storage
     # ============================================
@@ -160,6 +166,8 @@ class Settings(BaseSettings):
     enable_bcnet: bool = Field(default=True, env="ENABLE_BCNET")
     enable_vton: bool = Field(default=True, env="ENABLE_VTON")
     enable_3dgs: bool = Field(default=True, env="ENABLE_3DGS")
+    enable_shapy: bool = Field(default=True, env="ENABLE_SHAPY")
+    enable_snug: bool = Field(default=True, env="ENABLE_SNUG")
 
     debug_mode: bool = Field(default=False, env="DEBUG_MODE")
     enable_vram_monitoring: bool = Field(default=True, env="ENABLE_VRAM_MONITORING")

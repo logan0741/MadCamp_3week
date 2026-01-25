@@ -45,7 +45,7 @@ albumentations==1.3.1
 scikit-image==0.22.0
 
 # ============================================
-# 3D Processing (ECON, SMPL-X)
+# 3D Processing (ECON, SMPL-X, SHAPY, SNUG)
 # ============================================
 trimesh==4.0.10
 pymeshlab==2022.2.post4
@@ -55,6 +55,17 @@ PyMCubes==0.1.4
 # SMPL-X dependencies
 smplx==0.1.28
 chumpy==0.70
+
+# SHAPY dependencies (body shape estimation)
+kornia==0.7.0
+pytorch-lightning>=1.3.0
+torchmetrics>=0.2.0
+nflows>=0.14
+yacs>=0.1.8
+fvcore
+
+# SNUG dependencies (garment simulation)
+tensorflow>=2.7.0
 
 # ============================================
 # Numerical & Scientific
