@@ -264,6 +264,28 @@ Available: 68GB (충분함)
 
 ---
 
-*Last Updated: 2026-01-26 17:15*
-*Session: Docker Infrastructure Complete*
+## ✅ 연결 테스트 결과 (2026-01-26 17:50)
+
+### 1. 연결 구성
+- **Domain**: `https://voice-anime-fight.p-e.kr` (외부 VPS)
+- **Tunnel**: Autossh Reverse Tunnel (Port 22)
+- **Internal**: Docker Container (Frontend:3000, Backend:8000)
+
+### 2. 테스트 항목
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| **Frontend Load** | ✅ 200 OK | Next.js 페이지 로드 성공 |
+| **API Call** | ✅ 200 OK | Frontend → Backend 호출 성공 (/auth/register) |
+| **HTTPS Proxy** | ✅ Valid | Nginx SSL + Reverse Proxy 정상 동작 |
+| **DB Connection** | ✅ Success | PostgreSQL 테이블 확인 완료 |
+
+### 3. 주요 변경 사항
+- **Frontend**: `.env.local`에서 API URL을 HTTPS 도메인으로 변경
+- **Nginx**: `/auth`, `/products` 등 API 경로를 개별적으로 Backend 프록시 설정
+- **Docker**: `musinsa-frontend`, `musinsa-backend` 재시작하여 환경변수 적용
+
+---
+
+*Last Updated: 2026-01-26 17:55*
+*Session: Infrastructure Full Verification Complete*
 *Branch: 이젠-하기-싫어*
