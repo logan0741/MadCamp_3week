@@ -183,6 +183,12 @@ http://localhost:3000 에서 /models/demo_garment.glb 로드
 
 ## 다음 단계 (TODO)
 
+- [x] **Docker 인프라 구축** ✅ (2026-01-26 완료)
+  - docker-compose.prod.yml 생성 (7개 서비스)
+  - Nginx Static Serving 설정
+  - PostgreSQL 스키마 설계
+  - Autossh Reverse Tunneling
+
 - [ ] **SMPL-X 모델 가중치 설치**
   - 다운로드 위치: https://smpl-x.is.tue.mpg.de/
   - 설치 경로: `/home/MadCamp/MadCamp_3week/ai-pipeline/models/weights/smplx/`
@@ -195,6 +201,45 @@ http://localhost:3000 에서 /models/demo_garment.glb 로드
 - [ ] **실제 무신사 제품 이미지로 테스트**
   - 같은 옷의 앞/뒤 사진 사용
   - 사이즈 차트에서 측정값 가져오기
+
+---
+
+## 🐳 Docker 인프라 (2026-01-26 추가)
+
+### 서비스 구성
+| Service | Port | 역할 |
+|---------|------|------|
+| frontend | 3000 | Next.js Web UI |
+| backend | 8000 | FastAPI Main API |
+| ai-engine | 8001 | FastAPI AI Pipeline |
+| nginx-static | 8080 | PNG/JSON/GLB 정적 서빙 |
+| postgres | 5432 | 메타데이터 저장 |
+| redis | 6379 | Celery 브로커 |
+| autossh | - | SSH Tunnel (Port 22) |
+
+### 생성된 파일
+| 파일 | 설명 |
+|------|------|
+| `docker-compose.prod.yml` | 프로덕션 Docker Compose |
+| `nginx/static.conf` | Nginx 정적 파일 서빙 설정 |
+| `autossh/Dockerfile` | Autossh 컨테이너 |
+| `autossh/entrypoint.sh` | SSH 터널링 스크립트 |
+| `ai-pipeline/Dockerfile` | AI Engine CUDA 12.1 빌드 |
+| `ai-pipeline/database/` | PostgreSQL 연동 모듈 |
+| `scripts/init-db.sql` | DB 스키마 초기화 |
+| `.env.prod` | 프로덕션 환경 변수 |
+
+### 실행 방법
+```bash
+# 프로덕션 빌드 및 실행
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+# 로그 확인
+docker-compose -f docker-compose.prod.yml logs -f
+
+# 특정 서비스만 재시작
+docker-compose -f docker-compose.prod.yml restart ai-engine
+```
 
 ---
 
@@ -219,5 +264,6 @@ Available: 68GB (충분함)
 
 ---
 
-*Last Updated: 2026-01-26 08:10*
-*Session: Phase 1 Demo Complete*
+*Last Updated: 2026-01-26 17:15*
+*Session: Docker Infrastructure Complete*
+*Branch: 이젠-하기-싫어*
