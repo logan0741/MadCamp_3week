@@ -246,26 +246,64 @@ class VTONPreprocessor:
         Returns:
             Binary mask image
         """
-        # TODO: Integrate human parsing model (LIP, Graphonomy, SCHP)
-        logger.warning("Segmentation mask generation not implemented. Using placeholder.")
+        try:
+            from models.segmentation import FashnSegmenter
 
-        # Return white mask for entire torso region
-        width, height = image.size
-        mask = Image.new("L", (width, height), 0)
+            segmenter = FashnSegmenter.get_instance()
 
-        # Simple torso rectangle
-        from PIL import ImageDraw
-        draw = ImageDraw.Draw(mask)
+            label_map = {
+                "upper_clothes": "top",
+                "upper_body": "torso",
+                "torso": "torso",
+                "top": "top",
+                "shirt": "top",
+                "tshirt": "top",
+                "dress": "dress",
+                "pants": "pants",
+                "lower_clothes": "pants",
+                "skirt": "skirt",
+            }
 
-        torso_bbox = (
-            int(width * 0.25),
-            int(height * 0.2),
-            int(width * 0.75),
-            int(height * 0.7),
-        )
-        draw.rectangle(torso_bbox, fill=255)
+            fashn_labels = []
+            for label in target_labels:
+                mapped = label_map.get(label, label)
+                if mapped in segmenter.labels:
+                    fashn_labels.append(mapped)
 
-        return mask
+            if not fashn_labels:
+                fashn_labels = ["torso"]
+
+            masks = segmenter.segment(image)
+
+            combined = None
+            for label in fashn_labels:
+                if label in masks:
+                    combined = masks[label] if combined is None else (combined | masks[label])
+
+            if combined is None:
+                raise RuntimeError("No valid labels found for segmentation")
+
+            mask = Image.fromarray((combined.astype(np.uint8) * 255), mode="L")
+            return mask
+
+        except Exception as e:
+            logger.warning(f"Segmentation unavailable, using fallback mask: {e}")
+
+            width, height = image.size
+            mask = Image.new("L", (width, height), 0)
+
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(mask)
+
+            torso_bbox = (
+                int(width * 0.25),
+                int(height * 0.2),
+                int(width * 0.75),
+                int(height * 0.7),
+            )
+            draw.rectangle(torso_bbox, fill=255)
+
+            return mask
 
     def normalize_image(
         self,

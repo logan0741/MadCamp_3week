@@ -20,9 +20,9 @@ flower==2.0.1  # Celery monitoring
 # ============================================
 # Deep Learning Core
 # ============================================
-torch==2.1.2
-torchvision==0.16.2
-torchaudio==2.1.2
+torch==2.2.2
+torchvision==0.17.2
+torchaudio==2.2.2
 # PyTorch will be installed with CUDA 11.8 support
 # Installation: pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
@@ -43,6 +43,7 @@ opencv-contrib-python==4.9.0.80
 Pillow==10.2.0
 albumentations==1.3.1
 scikit-image==0.22.0
+fashn-human-parser>=1.0.0
 
 # ============================================
 # 3D Processing (ECON, SMPL-X, SHAPY, SNUG)
@@ -51,6 +52,7 @@ trimesh==4.0.10
 pymeshlab==2022.2.post4
 open3d==0.18.0
 PyMCubes==0.1.4
+pygltflib>=1.16.0
 
 # SMPL-X dependencies
 smplx==0.1.28

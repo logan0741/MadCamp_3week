@@ -2,7 +2,7 @@
 API Routers Package
 """
 
-from . import vton
 from . import avatar
+from . import garment
 
-__all__ = ["vton", "avatar"]
+__all__ = ["avatar", "garment"]

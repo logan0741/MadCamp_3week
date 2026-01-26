@@ -1,64 +1,27 @@
 """
 AI Router - Virtual try-on and garment modeling
 """
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-import os
 
-from core.database import get_db, SQLALCHEMY_DATABASE_URL
-from core.config import settings
+from core.database import get_db
 from domain.entities import User, Product, AITask
 from domain.schemas import AITaskResponse
 from api.dependencies import get_current_user
+from services.ai_pipeline_service import (
+    select_front_back_images,
+    submit_garment_task,
+    fetch_garment_task,
+    map_ai_pipeline_status,
+)
 
 router = APIRouter()
-
-
-async def process_garment_generation(task_id: str, product_id: int, db_url: str):
-    """
-    Background task to process garment 3D model generation.
-    """
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    
-    engine = create_engine(db_url)
-    SessionLocal = sessionmaker(bind=engine)
-    db = SessionLocal()
-    
-    try:
-        task = db.query(AITask).filter(AITask.id == task_id).first()
-        if task:
-            task.status = "PROCESSING"
-            db.commit()
-        
-        # TODO: Actual BCNet processing
-        import asyncio
-        await asyncio.sleep(3)  # Simulate processing
-        
-        if task:
-            task.status = "COMPLETED"
-            task.result_url = f"/uploads/garments/{product_id}/garment.glb"
-            db.commit()
-        
-        product = db.query(Product).filter(Product.id == product_id).first()
-        if product:
-            product.is_garment_modeled = True
-            db.commit()
-            
-    except Exception as e:
-        if task:
-            task.status = "FAILED"
-            task.error_message = str(e)
-            db.commit()
-    finally:
-        db.close()
 
 
 @router.post("/fit/{product_id}", response_model=AITaskResponse)
 async def request_garment_fitting(
     product_id: int,
-    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -103,16 +66,34 @@ async def request_garment_fitting(
     db.commit()
     db.refresh(task)
     
-    garment_dir = os.path.join(settings.GARMENT_UPLOAD_DIR, str(product_id))
-    os.makedirs(garment_dir, exist_ok=True)
-    
-    background_tasks.add_task(
-        process_garment_generation,
-        task.id,
-        product_id,
-        SQLALCHEMY_DATABASE_URL
-    )
-    
+    front_url, back_url = select_front_back_images(product)
+    if not front_url or not back_url:
+        raise HTTPException(status_code=400, detail="상품 이미지가 부족합니다.")
+
+    try:
+        response = await submit_garment_task(
+            front_url=front_url,
+            back_url=back_url,
+            garment_type="top",
+            product_id=product_id,
+            size="M",
+            height_cm=170,
+            weight_kg=65,
+        )
+
+        task.external_task_id = response.get("task_id")
+        task.status = "PROCESSING"
+        db.commit()
+        db.refresh(task)
+
+    except Exception as e:
+        task.status = "FAILED"
+        task.error_message = str(e)
+        db.commit()
+        db.refresh(task)
+
+        raise HTTPException(status_code=502, detail=f"AI 파이프라인 요청 실패: {e}")
+
     return task
 
 
@@ -143,5 +124,30 @@ async def get_task_status(
     
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
+    if task.external_task_id and task.status not in ["COMPLETED", "FAILED"]:
+        try:
+            pipeline_status = await fetch_garment_task(task.external_task_id)
+            mapped_status = map_ai_pipeline_status(pipeline_status.get("status", ""))
+
+            task.status = mapped_status
+
+            if mapped_status == "COMPLETED":
+                result = pipeline_status.get("result", {}) or {}
+                task.result_url = result.get("garment_glb_url")
+                task.error_message = None
+
+                product = db.query(Product).filter(Product.id == task.product_id).first()
+                if product:
+                    product.is_garment_modeled = True
+
+            elif mapped_status == "FAILED":
+                task.error_message = pipeline_status.get("error") or "AI pipeline failed"
+
+            db.commit()
+            db.refresh(task)
+        except Exception:
+            # Keep existing task status if pipeline check fails
+            db.rollback()
+
     return task

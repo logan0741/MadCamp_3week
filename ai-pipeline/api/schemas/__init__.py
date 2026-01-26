@@ -10,6 +10,12 @@ from .vton import (
     VTONBatchRequest,
     VTONBatchResponse,
 )
+from .garment import (
+    GarmentProcessRequest,
+    GarmentProcessResponse,
+    GarmentAsyncResponse,
+    GarmentSizesResponse,
+)
 
 __all__ = [
     "ErrorResponse",
@@ -18,4 +24,8 @@ __all__ = [
     "VTONResponse",
     "VTONBatchRequest",
     "VTONBatchResponse",
+    "GarmentProcessRequest",
+    "GarmentProcessResponse",
+    "GarmentAsyncResponse",
+    "GarmentSizesResponse",
 ]

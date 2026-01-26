@@ -122,3 +122,24 @@ async def remove_product_from_interests(
         raise HTTPException(status_code=404, detail="Product not in your interest list")
     
     return {"message": "Product removed from interest list"}
+
+
+@router.get("/{product_id}/sizes")
+async def get_product_sizes(
+    product_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get size measurements for a product.
+
+    NOTE: 현재 DB에 사이즈 테이블이 없어 빈 값 반환.
+    팀원 크롤링 데이터 연동 시 이 부분을 교체하세요.
+    """
+    product = ProductService.get_product_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return {
+        "product_id": product_id,
+        "sizes": {},
+    }

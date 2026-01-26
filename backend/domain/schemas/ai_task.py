@@ -17,6 +17,7 @@ class AITaskResponse(BaseModel):
     id: str
     task_type: str
     status: str
+    external_task_id: Optional[str] = None
     result_url: Optional[str]
     error_message: Optional[str]
     created_at: datetime

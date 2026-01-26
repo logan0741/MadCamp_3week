@@ -1,0 +1,23 @@
+
+> musinsa-tracker-frontend@0.1.0 dev
+> next dev --port 3000
+
+ ⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at /home/MadCamp/MadCamp_3week/frontend/node_modules/next/dist/server/lib/start-server.js:278:16
+    at new Promise (<anonymous>)
+    at startServer (/home/MadCamp/MadCamp_3week/frontend/node_modules/next/dist/server/lib/start-server.js:190:11)
+    at /home/MadCamp/MadCamp_3week/frontend/node_modules/next/dist/server/lib/start-server.js:308:52
+    at Span.traceAsyncFn (/home/MadCamp/MadCamp_3week/frontend/node_modules/next/dist/trace/trace.js:151:26)
+    at process.<anonymous> (/home/MadCamp/MadCamp_3week/frontend/node_modules/next/dist/server/lib/start-server.js:308:35)
+    at process.emit (node:events:524:28) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+[?25h

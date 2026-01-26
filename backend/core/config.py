@@ -28,6 +28,10 @@ class Settings:
     VIDEO_UPLOAD_DIR: str = "uploads/videos"
     AVATAR_UPLOAD_DIR: str = "uploads/avatars"
     GARMENT_UPLOAD_DIR: str = "uploads/garments"
+
+    # AI Pipeline Integration
+    AI_PIPELINE_BASE_URL: str = os.getenv("AI_PIPELINE_BASE_URL", "http://localhost:8001")
+    AI_PIPELINE_TIMEOUT_SECONDS: float = float(os.getenv("AI_PIPELINE_TIMEOUT_SECONDS", "10"))
     
     # API
     API_V1_PREFIX: str = "/api/v1"

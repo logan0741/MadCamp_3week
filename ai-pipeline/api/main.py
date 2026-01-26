@@ -18,7 +18,7 @@ from loguru import logger
 import time
 
 from config import settings, print_config_summary
-from api.routers import vton, avatar
+from api.routers import avatar, garment
 
 
 # ============================================
@@ -176,13 +176,23 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for load balancer."""
-    import torch
+    try:
+        import torch
 
-    return {
-        "status": "healthy",
-        "cuda_available": torch.cuda.is_available(),
-        "cuda_devices": torch.cuda.device_count() if torch.cuda.is_available() else 0,
-    }
+        cuda_available = torch.cuda.is_available()
+        cuda_devices = torch.cuda.device_count() if cuda_available else 0
+        return {
+            "status": "healthy",
+            "cuda_available": cuda_available,
+            "cuda_devices": cuda_devices,
+        }
+    except Exception:
+        return {
+            "status": "healthy",
+            "cuda_available": False,
+            "cuda_devices": 0,
+            "warning": "torch not installed",
+        }
 
 
 @app.get("/vram-status")
@@ -217,16 +227,27 @@ async def vram_status():
 # ============================================
 # Include Routers
 # ============================================
-app.include_router(
-    vton.router,
-    prefix="/api/vton",
-    tags=["Virtual Try-On"],
-)
+if settings.enable_vton:
+    from api.routers import vton
+
+    app.include_router(
+        vton.router,
+        prefix="/api/vton",
+        tags=["Virtual Try-On"],
+    )
+else:
+    logger.warning("VTON disabled: skipping /api/vton routes")
 
 app.include_router(
     avatar.router,
     prefix="/api/avatar",
     tags=["3D Avatar"],
+)
+
+app.include_router(
+    garment.router,
+    prefix="/api/garment",
+    tags=["Garment Pipeline"],
 )
 
 

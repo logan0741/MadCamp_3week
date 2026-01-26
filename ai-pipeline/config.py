@@ -128,6 +128,13 @@ class Settings(BaseSettings):
     # ============================================
     # External Services
     # ============================================
+    backend_base_url: str = Field(default="http://localhost:8000", env="BACKEND_BASE_URL")
+    backend_size_endpoint: str = Field(
+        default="/api/v1/products/{product_id}/sizes",
+        env="BACKEND_SIZE_ENDPOINT"
+    )
+    backend_timeout_seconds: float = Field(default=5.0, env="BACKEND_TIMEOUT_SECONDS")
+
     aws_access_key_id: Optional[str] = Field(default=None, env="AWS_ACCESS_KEY_ID")
     aws_secret_access_key: Optional[str] = Field(default=None, env="AWS_SECRET_ACCESS_KEY")
     aws_region: str = Field(default="ap-northeast-2", env="AWS_REGION")

@@ -18,6 +18,7 @@ class AITask(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=True)
     task_type = Column(String(20), nullable=False)  # 'AVATAR' or 'GARMENT'
     status = Column(String(20), default='PENDING')  # PENDING, PROCESSING, COMPLETED, FAILED
+    external_task_id = Column(String(64), nullable=True)
     result_url = Column(Text, nullable=True)
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

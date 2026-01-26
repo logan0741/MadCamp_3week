@@ -206,37 +206,49 @@ class IDMVTON:
         """
         Generate torso segmentation mask for garment replacement.
 
-        This is a simplified implementation. In production, use a proper
-        human parsing model like LIP (Look Into Person) or Graphonomy.
-
         Args:
             person_image: PIL Image of the person
 
         Returns:
             Binary mask image (white=replace, black=keep)
         """
-        # TODO: Integrate human parsing model
-        # For now, create a simple center rectangle mask
+        try:
+            from models.segmentation import FashnSegmenter
 
-        width, height = person_image.size
-        mask = Image.new("L", (width, height), 0)
+            segmenter = FashnSegmenter.get_instance()
+            masks = segmenter.segment(person_image)
 
-        # Define torso region (approximate)
-        torso_top = int(height * 0.2)
-        torso_bottom = int(height * 0.7)
-        torso_left = int(width * 0.25)
-        torso_right = int(width * 0.75)
+            sample_mask = next(iter(masks.values()))
+            empty = np.zeros_like(sample_mask, dtype=bool)
 
-        # Draw white rectangle for torso
-        from PIL import ImageDraw
-        draw = ImageDraw.Draw(mask)
-        draw.rectangle(
-            [torso_left, torso_top, torso_right, torso_bottom],
-            fill=255
-        )
+            combined = (
+                masks.get("torso", empty)
+                | masks.get("top", empty)
+                | masks.get("dress", empty)
+            )
 
-        logger.warning("Using simplified mask generation. Integrate human parsing for production.")
-        return mask
+            mask = Image.fromarray((combined.astype(np.uint8) * 255), mode="L")
+            return mask
+
+        except Exception as e:
+            logger.warning(f"Segmentation unavailable, using fallback mask: {e}")
+
+            width, height = person_image.size
+            mask = Image.new("L", (width, height), 0)
+
+            torso_top = int(height * 0.2)
+            torso_bottom = int(height * 0.7)
+            torso_left = int(width * 0.25)
+            torso_right = int(width * 0.75)
+
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(mask)
+            draw.rectangle(
+                [torso_left, torso_top, torso_right, torso_bottom],
+                fill=255
+            )
+
+            return mask
 
     def batch_process(
         self,

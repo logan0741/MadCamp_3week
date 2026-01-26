@@ -3,7 +3,10 @@ AI Models Package
 Contains implementations for ECON, BCNet, IDM-VTON, 3DGS, SHAPY, and SNUG.
 """
 
-from .vton import IDMVTON
+try:
+    from .vton import IDMVTON
+except Exception:  # Optional dependency (torch/diffusers)
+    IDMVTON = None
 
 # Lazy imports for 3D models (they have heavy dependencies)
 def get_shapy_model():

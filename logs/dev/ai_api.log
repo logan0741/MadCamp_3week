@@ -1,0 +1,39 @@
+/home/MadCamp/MadCamp_3week/ai-pipeline/venv/lib/python3.12/site-packages/pydantic/_internal/_fields.py:149: UserWarning: Field "model_weights_dir" has conflict with protected namespace "model_".
+
+You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('settings_',)`.
+  warnings.warn(
+2026-01-26 06:16:34.247 | WARNING  | __main__:<module>:239 - VTON disabled: skipping /api/vton routes
+INFO:     Will watch for changes in these directories: ['/home/MadCamp/MadCamp_3week/ai-pipeline']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [211046] using WatchFiles
+/home/MadCamp/MadCamp_3week/ai-pipeline/venv/lib/python3.12/site-packages/pydantic/_internal/_fields.py:149: UserWarning: Field "model_weights_dir" has conflict with protected namespace "model_".
+
+You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('settings_',)`.
+  warnings.warn(
+2026-01-26 06:16:35.008 | WARNING  | __mp_main__:<module>:239 - VTON disabled: skipping /api/vton routes
+2026-01-26 06:16:35.049 | WARNING  | main:<module>:239 - VTON disabled: skipping /api/vton routes
+INFO:     Started server process [211165]
+INFO:     Waiting for application startup.
+2026-01-26 06:16:35.060 | INFO     | main:lifespan:41 - ==================================================
+2026-01-26 06:16:35.060 | INFO     | main:lifespan:42 - AI Pipeline API Starting...
+2026-01-26 06:16:35.060 | INFO     | main:lifespan:43 - ==================================================
+2026-01-26 06:16:35.060 | SUCCESS  | main:lifespan:62 - AI Pipeline API started successfully
+INFO:     Application startup complete.
+2026-01-26 06:16:39.586 | INFO     | main:log_requests:112 - Request: GET /health
+2026-01-26 06:16:39.588 | INFO     | main:log_requests:119 - Completed in 0.002s - Status: 200
+==================================================
+AI Pipeline Configuration Summary
+==================================================
+Environment: development
+API: 0.0.0.0:8001
+Redis: localhost:6379
+CUDA Devices: 0,1,2,3
+Upload Dir: /home/MadCamp/MadCamp_3week/ai-pipeline/data/uploads
+Output Dir: /home/MadCamp/MadCamp_3week/ai-pipeline/data/outputs
+Feature Flags:
+  - ECON: True
+  - BCNet: True
+  - VTON: False
+  - 3DGS: True
+==================================================
+INFO:     127.0.0.1:43450 - "GET /health HTTP/1.1" 200 OK
