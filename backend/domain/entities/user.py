@@ -18,6 +18,7 @@ class User(Base):
     is_avatar_created = Column(Boolean, default=False)
     height = Column(Float, nullable=True)
     weight = Column(Float, nullable=True)
+    gender = Column(String(10), nullable=True)
     avatar_url = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
