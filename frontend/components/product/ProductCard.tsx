@@ -41,7 +41,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                     </div>
                 )}
 
-                {product.discount_rate && product.discount_rate > 0 && (
+                {Number(product.discount_rate) > 0 && (
                     <div className={styles.discountBadge}>
                         {product.discount_rate}% OFF
                     </div>
