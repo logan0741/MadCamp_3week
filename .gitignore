@@ -37,9 +37,13 @@ uploads/
 
 # AI pipeline outputs
 ai-pipeline/outputs/
+ai-pipeline/test_artifacts/
 
 # Backend caches
 backend/data/
+
+# Frontend test artifacts
+frontend/public/test_artifacts/
 
 # Environment
 .env

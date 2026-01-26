@@ -11,6 +11,8 @@ import json
 import re
 import sys
 from pathlib import Path
+from datetime import datetime
+import shutil
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -21,6 +23,8 @@ from PIL import Image
 AI_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_ROOT.parent
 BACKEND_ROOT = REPO_ROOT / "backend"
+TEST_OUTPUT_ROOT = AI_ROOT / "test_artifacts"
+FRONTEND_PUBLIC_ROOT = REPO_ROOT / "frontend" / "public" / "test_artifacts"
 sys.path.insert(0, str(AI_ROOT))
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(BACKEND_ROOT))
@@ -174,6 +178,15 @@ def run_pipeline(
     return glb_path
 
 
+def _publish_to_frontend(output_dir: Path, category: str, date_tag: str, run_id: str) -> None:
+    target_dir = FRONTEND_PUBLIC_ROOT / category / date_tag / run_id
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    for item in output_dir.iterdir():
+        if item.is_file():
+            shutil.copy2(item, target_dir / item.name)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Crawl Musinsa product and run reconstruction test.")
     parser.add_argument("--url", required=True, help="Musinsa product URL")
@@ -184,6 +197,7 @@ def main() -> None:
     parser.add_argument("--height-cm", type=float, default=170)
     parser.add_argument("--weight-kg", type=float, default=65)
     parser.add_argument("--use-playwright", action="store_true", help="Try Playwright for size scraping")
+    parser.add_argument("--publish-to-frontend", action="store_true", help="Copy outputs to frontend/public/test_artifacts")
     args = parser.parse_args()
 
     product = fetch_product_info(args.url)
@@ -192,7 +206,9 @@ def main() -> None:
 
     front_url, back_url = select_front_back(image_urls, args.front_index, args.back_index)
 
-    output_dir = AI_ROOT / "outputs" / "crawls" / product_id
+    date_tag = datetime.now().strftime("%Y%m%d")
+    run_id = f"{product_id}_{datetime.now().strftime('%H%M%S')}"
+    output_dir = TEST_OUTPUT_ROOT / "crawled" / date_tag / run_id
     output_dir.mkdir(parents=True, exist_ok=True)
 
     product_info_path = output_dir / "product.json"
@@ -221,6 +237,9 @@ def main() -> None:
         weight_kg=args.weight_kg,
         output_dir=output_dir,
     )
+
+    if args.publish_to_frontend:
+        _publish_to_frontend(output_dir, "crawled", date_tag, run_id)
 
     logger.info(f"Saved outputs to: {output_dir}")
     logger.info(f"GLB: {glb_path}")
