@@ -14,8 +14,6 @@ export default function Home() {
 
         if (!token) {
             router.push('/login');
-        } else if (user && !user.is_avatar_created) {
-            router.push('/onboarding');
         } else {
             router.push('/dashboard');
         }

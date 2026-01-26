@@ -16,6 +16,7 @@ export default function RegisterPage() {
         confirmPassword: '',
         height: '',
         weight: '',
+        gender: '',
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +52,7 @@ export default function RegisterPage() {
                 password: formData.password,
                 height: formData.height ? parseFloat(formData.height) : undefined,
                 weight: formData.weight ? parseFloat(formData.weight) : undefined,
+                gender: formData.gender || undefined,
             });
 
             // Auto login after registration
@@ -140,6 +142,32 @@ export default function RegisterPage() {
                                 value={formData.weight}
                                 onChange={handleChange}
                             />
+                        </div>
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">성별</label>
+                        <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="male"
+                                    checked={formData.gender === 'male'}
+                                    onChange={handleChange}
+                                />
+                                남성
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="female"
+                                    checked={formData.gender === 'female'}
+                                    onChange={handleChange}
+                                />
+                                여성
+                            </label>
                         </div>
                     </div>
 

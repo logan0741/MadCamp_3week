@@ -1,4 +1,21 @@
+volumes:
+  postgres_data:
+
+
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: musinsa-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=musinsa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app-network
+
   backend:
     build:
       context: ./backend
@@ -7,12 +24,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./app.db
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/musinsa
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
-    volumes:
-      - ./backend/app.db:/app/app.db
+    depends_on:
+      - db
     restart: unless-stopped
     networks:
       - app-network
