@@ -70,3 +70,7 @@ Feature Flags:
 VTON Preload: False
 ==================================================
 INFO:     127.0.0.1:54896 - "GET /health HTTP/1.1" 200 OK
+2026-01-26 14:58:10.121 | INFO     | main:log_requests:112 - Request: GET /health
+2026-01-26 14:58:10.124 | INFO     | main:log_requests:119 - Completed in 0.003s - Status: 200
+INFO:     127.0.0.1:35814 - "GET /health HTTP/1.1" 200 OK
+./start_api.sh: line 67: 217663 Killed                  python3 main.py
