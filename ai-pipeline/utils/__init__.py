@@ -11,9 +11,18 @@ from .progress_tracker import (
     checkpoint,
 )
 
+from .static_paths import (
+    StaticPathManager,
+    static_path_manager,
+    get_path_manager,
+)
+
 __all__ = [
     "ProgressTracker",
     "get_tracker",
     "update_progress",
     "checkpoint",
+    "StaticPathManager",
+    "static_path_manager",
+    "get_path_manager",
 ]
