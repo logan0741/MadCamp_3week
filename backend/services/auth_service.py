@@ -37,6 +37,7 @@ class AuthService:
             password_hash=get_password_hash(user_data.password),
             height=user_data.height,
             weight=user_data.weight,
+            gender=user_data.gender,
             is_avatar_created=False
         )
         db.add(new_user)

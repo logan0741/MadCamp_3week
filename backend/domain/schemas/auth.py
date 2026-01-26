@@ -11,6 +11,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=6)
     height: Optional[float] = None
     weight: Optional[float] = None
+    gender: Optional[str] = None
 
 
 class UserLogin(BaseModel):

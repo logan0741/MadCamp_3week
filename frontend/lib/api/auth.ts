@@ -15,6 +15,7 @@ interface RegisterData {
     password: string;
     height?: number;
     weight?: number;
+    gender?: string;
 }
 
 export const authApi = {

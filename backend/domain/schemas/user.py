@@ -12,6 +12,7 @@ class UserStatus(BaseModel):
     is_avatar_created: bool
     height: Optional[float]
     weight: Optional[float]
+    gender: Optional[str]
     avatar_url: Optional[str]
 
     class Config:
@@ -22,3 +23,4 @@ class UserUpdate(BaseModel):
     """Schema for user profile update"""
     height: Optional[float] = None
     weight: Optional[float] = None
+    gender: Optional[str] = None
