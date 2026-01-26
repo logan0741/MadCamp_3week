@@ -5,7 +5,7 @@ Garment size scaling utilities.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import trimesh
@@ -98,3 +98,107 @@ class GarmentSizeScaler:
                 raise ValueError("Empty mesh scene")
             mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
         return mesh
+
+    def get_mesh_measurements(self, mesh: trimesh.Trimesh) -> Dict[str, float]:
+        """
+        Extract actual measurements from mesh bounding box.
+
+        Returns dimensions in cm (assuming mesh units are meters, scaled by 100).
+        """
+        bounds = mesh.bounds
+        extents = bounds[1] - bounds[0]
+
+        # Assuming Y is vertical (length), X is width, Z is depth
+        return {
+            "length_cm": float(extents[1] * 100),
+            "width_cm": float(extents[0] * 100),
+            "depth_cm": float(extents[2] * 100),
+            "bounding_box": extents.tolist(),
+        }
+
+    def verify_mesh_dimensions(
+        self,
+        scaled_mesh: trimesh.Trimesh,
+        garment_type: str,
+        target_cm: Dict[str, float],
+    ) -> Dict[str, Any]:
+        """
+        Verify scaled mesh dimensions against input measurements.
+
+        Returns fact-check report with accuracy metrics.
+        """
+        actual = self.get_mesh_measurements(scaled_mesh)
+        ref = self.REFERENCE_SIZES.get(garment_type, {})
+
+        verification = {
+            "garment_type": garment_type,
+            "target_measurements": target_cm,
+            "actual_mesh_dimensions": actual,
+            "reference_sizes": ref,
+            "verification_results": {},
+            "overall_accuracy": 0.0,
+            "passed": False,
+        }
+
+        # Map mesh dimensions to measurement types
+        dimension_mapping = {
+            "length": "length_cm",
+            "shoulder": "width_cm",
+            "chest": "depth_cm",
+            "bust": "depth_cm",
+            "waist": "width_cm",
+            "hip": "depth_cm",
+        }
+
+        accuracies = []
+        for measurement, target_value in target_cm.items():
+            mesh_dim = dimension_mapping.get(measurement)
+            if mesh_dim and mesh_dim in actual:
+                actual_value = actual[mesh_dim]
+                # Calculate scale-adjusted accuracy
+                ref_value = ref.get(measurement, target_value)
+                expected_scale = target_value / ref_value if ref_value else 1.0
+
+                # Compare ratios rather than absolute values
+                accuracy = min(target_value, actual_value) / max(target_value, actual_value) * 100
+                accuracies.append(accuracy)
+
+                verification["verification_results"][measurement] = {
+                    "target_cm": target_value,
+                    "reference_cm": ref_value,
+                    "expected_scale": expected_scale,
+                    "accuracy_percent": round(accuracy, 2),
+                }
+
+        if accuracies:
+            verification["overall_accuracy"] = round(sum(accuracies) / len(accuracies), 2)
+            verification["passed"] = verification["overall_accuracy"] >= 85.0
+
+        return verification
+
+    def scale_mesh_with_verification(
+        self,
+        template_mesh: trimesh.Trimesh,
+        garment_type: str,
+        target_cm: Dict[str, float],
+    ) -> tuple[trimesh.Trimesh, Dict[str, Any]]:
+        """
+        Scale mesh and return verification report.
+
+        Returns:
+            Tuple of (scaled_mesh, verification_report)
+        """
+        scaled = self.scale_mesh(template_mesh, garment_type, target_cm)
+        verification = self.verify_mesh_dimensions(scaled, garment_type, target_cm)
+
+        if not verification["passed"]:
+            logger.warning(
+                f"Mesh verification failed: {verification['overall_accuracy']:.1f}% accuracy "
+                f"(target: 85%)"
+            )
+        else:
+            logger.info(
+                f"Mesh verification passed: {verification['overall_accuracy']:.1f}% accuracy"
+            )
+
+        return scaled, verification

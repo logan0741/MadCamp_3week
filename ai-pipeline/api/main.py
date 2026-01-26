@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     print_config_summary()
 
     # Pre-load VTON model if enabled (always-on)
-    if settings.enable_vton:
+    if settings.enable_vton and settings.preload_vton:
         logger.info("Pre-loading IDM-VTON model...")
         try:
             from models import IDMVTON

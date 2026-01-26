@@ -35,6 +35,12 @@ Thumbs.db
 # Uploads
 uploads/
 
+# AI pipeline outputs
+ai-pipeline/outputs/
+
+# Backend caches
+backend/data/
+
 # Environment
 .env
 .env.local

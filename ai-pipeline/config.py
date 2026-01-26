@@ -120,6 +120,7 @@ class Settings(BaseSettings):
     vton_image_size: int = Field(default=768, env="VTON_IMAGE_SIZE")
     vton_num_inference_steps: int = Field(default=50, env="VTON_NUM_INFERENCE_STEPS")
     vton_guidance_scale: float = Field(default=7.5, env="VTON_GUIDANCE_SCALE")
+    preload_vton: bool = Field(default=False, env="PRELOAD_VTON")
 
     # 3DGS
     gaussian_num_points: int = Field(default=100000, env="GAUSSIAN_NUM_POINTS")
@@ -287,6 +288,7 @@ def print_config_summary():
     print(f"  - BCNet: {settings.enable_bcnet}")
     print(f"  - VTON: {settings.enable_vton}")
     print(f"  - 3DGS: {settings.enable_3dgs}")
+    print(f"VTON Preload: {settings.preload_vton}")
     print("=" * 50)
 
 

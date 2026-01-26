@@ -76,13 +76,28 @@ class StandardMannequin:
         betas[0, 1] = np.clip(weight_delta * 0.1, -2.0, 2.0)
         return betas
 
+    def _fallback_mesh(self, height_cm: float) -> trimesh.Trimesh:
+        """
+        Fallback mannequin when SMPL-X weights are unavailable.
+        """
+        height_m = max(height_cm / 100.0, 1.0)
+        radius = max(height_m * 0.12, 0.15)
+        mesh = trimesh.creation.capsule(radius=radius, height=height_m * 0.8)
+        # Align capsule to Y axis
+        mesh.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
+        return mesh
+
     def get_mesh(self, height_cm: float = 170, weight_kg: float = 65) -> trimesh.Trimesh:
         """
         Create a SMPL-X mesh scaled to the target height.
         """
-        import torch
+        try:
+            self._load_model()
+        except Exception as exc:
+            logger.warning(f"SMPL-X unavailable, using fallback mannequin: {exc}")
+            return self._fallback_mesh(height_cm)
 
-        self._load_model()
+        import torch
 
         betas = self._height_weight_to_betas(height_cm, weight_kg)
         body_pose = torch.zeros([1, 63], dtype=torch.float32, device=self.device)
@@ -99,3 +114,29 @@ class StandardMannequin:
         vertices = vertices * scale
 
         return trimesh.Trimesh(vertices=vertices, faces=self.model.faces, process=False)
+
+
+# Global singleton instance
+_mannequin_instance: StandardMannequin | None = None
+
+
+def generate_mannequin(
+    height_cm: float = 170,
+    weight_kg: float = 65,
+    gender: str = "neutral",
+) -> trimesh.Trimesh:
+    """
+    Convenience function to generate a mannequin mesh.
+
+    Args:
+        height_cm: Target height in centimeters
+        weight_kg: Target weight in kilograms
+        gender: Body gender (neutral, male, female)
+
+    Returns:
+        trimesh.Trimesh of the mannequin body
+    """
+    global _mannequin_instance
+    if _mannequin_instance is None or _mannequin_instance.gender != gender:
+        _mannequin_instance = StandardMannequin(gender=gender)
+    return _mannequin_instance.get_mesh(height_cm, weight_kg)

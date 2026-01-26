@@ -14,6 +14,11 @@ from domain.schemas import (
 from api.dependencies import get_current_user
 from services.product_service import ProductService
 from services.scraper import scrape_musinsa_product
+from services.size_scraper import (
+    get_cached_sizes,
+    save_cached_sizes,
+    scrape_musinsa_sizes,
+)
 
 router = APIRouter()
 
@@ -139,7 +144,32 @@ async def get_product_sizes(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    return {
-        "product_id": product_id,
-        "sizes": {},
-    }
+    cached = get_cached_sizes(product_id)
+    if cached and cached.sizes:
+        return {
+            "product_id": product_id,
+            "sizes": cached.sizes,
+            "source": cached.source,
+            "updated_at": cached.updated_at,
+        }
+
+    try:
+        result = await scrape_musinsa_sizes(
+            product_id=product.musinsa_id,
+            product_url=product.url,
+            use_playwright=False,
+        )
+        if result.sizes:
+            save_cached_sizes(product_id, result)
+        return {
+            "product_id": product_id,
+            "sizes": result.sizes,
+            "source": result.source,
+            "updated_at": result.updated_at,
+        }
+    except Exception as exc:
+        return {
+            "product_id": product_id,
+            "sizes": {},
+            "error": str(exc),
+        }

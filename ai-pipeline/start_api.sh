@@ -13,13 +13,26 @@ echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}  Musinsa AI Pipeline - API Server  ${NC}"
 echo -e "${GREEN}=====================================${NC}"
 
+# Activate virtual environment if exists
+if [ -d "venv" ]; then
+    echo -e "\n${YELLOW}Activating virtual environment...${NC}"
+    source venv/bin/activate
+fi
+
 # Check Python version
 echo -e "\n${YELLOW}Checking Python version...${NC}"
 python3 --version
 
 # Check CUDA
 echo -e "\n${YELLOW}Checking CUDA availability...${NC}"
-python3 -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Devices: {torch.cuda.device_count()}')"
+python3 - <<'PY'
+try:
+    import torch
+    print(f'CUDA Available: {torch.cuda.is_available()}')
+    print(f'CUDA Devices: {torch.cuda.device_count()}')
+except Exception as e:
+    print(f'CUDA check skipped: {e}')
+PY
 
 # Check Redis
 echo -e "\n${YELLOW}Checking Redis connection...${NC}"
@@ -29,12 +42,6 @@ else
     echo -e "${RED}Redis is not running. Please start Redis first:${NC}"
     echo -e "${YELLOW}  redis-server &${NC}"
     exit 1
-fi
-
-# Activate virtual environment if exists
-if [ -d "venv" ]; then
-    echo -e "\n${YELLOW}Activating virtual environment...${NC}"
-    source venv/bin/activate
 fi
 
 # Check if .env exists

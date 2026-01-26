@@ -1,0 +1,27 @@
+[0;32m=====================================[0m
+[0;32m  Musinsa AI Pipeline - Celery Worker[0m
+[0;32m=====================================[0m
+
+[1;33mChecking Redis connection...[0m
+
+[1;33mStarting Celery worker with:[0m
+  Concurrency: 2
+  Log Level: info
+  Queues: vton,avatar,garment
+
+
+/home/MadCamp/MadCamp_3week/ai-pipeline/venv/lib/python3.12/site-packages/pydantic/_internal/_fields.py:149: UserWarning: Field "model_weights_dir" has conflict with protected namespace "model_".
+
+You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('settings_',)`.
+  warnings.warn(
+2026-01-26 06:50:51.122 | INFO     | workers.vram_manager:__init__:50 - VRAMManager initialized
+/home/MadCamp/MadCamp_3week/ai-pipeline/venv/lib/python3.12/site-packages/diffusers/utils/outputs.py:63: UserWarning: torch.utils._pytree._register_pytree_node is deprecated. Please use torch.utils._pytree.register_pytree_node instead.
+  torch.utils._pytree._register_pytree_node(
+2026-01-26 06:50:52.314 | INFO     | models.vton.preprocessor:__init__:39 - VTONPreprocessor initialized (target_size=(768, 768))
+2026-01-26 06:50:52.314 | INFO     | models.vton.postprocessor:__init__:42 - VTONPostprocessor initialized
+Usage: celery [OPTIONS] COMMAND [ARGS]...
+Try 'celery --help' for help.
+
+Error: 
+Unable to load celery application.
+'celery' object has no attribute 'signals'

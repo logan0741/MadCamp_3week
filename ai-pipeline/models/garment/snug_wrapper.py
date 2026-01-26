@@ -75,7 +75,9 @@ class SnugModel:
             self._initialized = True
 
         except ImportError as e:
-            raise RuntimeError(f"Failed to import SNUG dependencies: {e}")
+            # TensorFlow not available - will use fallback physics
+            print(f"TensorFlow not available ({e}), using fallback physics")
+            self._initialized = True
 
     def simulate(
         self,
@@ -120,7 +122,11 @@ class SnugModel:
         num_steps: int,
     ) -> Dict[str, Any]:
         """Run actual SNUG model inference."""
-        import tensorflow as tf
+        try:
+            import tensorflow as tf
+        except ImportError:
+            # TensorFlow not available, use fallback
+            return self._get_fallback_result(body_vertices)
 
         # Load garment template mesh
         garment_template = self._load_garment_template()
