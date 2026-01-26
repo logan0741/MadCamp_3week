@@ -19,6 +19,8 @@ from services.size_scraper import (
     save_cached_sizes,
     scrape_musinsa_sizes,
 )
+from services.color_analyzer import analyze_product_colors
+from services.recommendation_service import get_style_recommendations
 
 router = APIRouter()
 
@@ -172,4 +174,87 @@ async def get_product_sizes(
             "product_id": product_id,
             "sizes": {},
             "error": str(exc),
+        }
+
+
+@router.get("/{product_id}/colors")
+async def get_product_colors(
+    product_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get PCCS color analysis for a product.
+    Extracts dominant colors from product images and converts to PCCS coordinates.
+    """
+    product = ProductService.get_product_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if not product.thumbnail_url:
+        raise HTTPException(status_code=400, detail="Product has no images for analysis")
+
+    try:
+        # Get image URLs
+        image_urls = product.image_urls if isinstance(product.image_urls, list) else []
+        if isinstance(product.image_urls, str):
+            import json
+            try:
+                image_urls = json.loads(product.image_urls)
+            except:
+                image_urls = []
+
+        # Analyze colors
+        color_data = await analyze_product_colors(product.thumbnail_url, image_urls)
+
+        if not color_data:
+            return {
+                "product_id": product_id,
+                "error": "Could not analyze colors. ML dependencies may not be installed.",
+                "colors": None
+            }
+
+        return {
+            "product_id": product_id,
+            "pccs": {
+                "hue": color_data['pccs_hue'],
+                "value": color_data['pccs_value'],
+                "chroma": color_data['pccs_chroma'],
+                "tone": color_data['pccs_tone'],
+            },
+            "primary_color": color_data['primary_color_hex'],
+            "palette": color_data['color_palette'],
+            "temperature": color_data['color_temperature'],
+            "complementary_suggestions": color_data['complementary_suggestions']
+        }
+
+    except Exception as exc:
+        return {
+            "product_id": product_id,
+            "error": str(exc),
+            "colors": None
+        }
+
+
+@router.get("/{product_id}/recommendations")
+async def get_product_recommendations(
+    product_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get style-matched product recommendations for outfit coordination.
+    Returns products from different categories that match the source product's style/color.
+    """
+    product = ProductService.get_product_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    try:
+        recommendations = get_style_recommendations(db, product_id)
+        return recommendations
+    except Exception as exc:
+        return {
+            "product_id": product_id,
+            "error": str(exc),
+            "recommendations": {}
         }
