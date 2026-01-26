@@ -140,7 +140,7 @@ export default function ProductDetailPage() {
                             <span className={styles.currentPrice}>
                                 {formatPrice(currentPrice)}
                             </span>
-                            {product.discount_rate && product.discount_rate > 0 && (
+                            {Number(product.discount_rate) > 0 && (
                                 <span className={styles.discountBadge}>
                                     {product.discount_rate}% OFF
                                 </span>
