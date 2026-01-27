@@ -288,6 +288,143 @@
     color: var(--color-text-muted);
 }
 
+/* Upload Modal */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    z-index: 1000;
+}
+
+.modal {
+    width: 100%;
+    max-width: 360px;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: var(--space-lg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+}
+
+.modalHeader h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.closeButton {
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.guideCard {
+    background: #f7f7f8;
+    border-radius: 16px;
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.guideHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.guideBadge {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #202124;
+}
+
+.guideList {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #555;
+    font-size: 0.9rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.figureWrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: var(--space-md);
+}
+
+.stickFigure {
+    width: 92px;
+    height: 120px;
+    color: #111;
+}
+
+.storageNote {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    margin-bottom: var(--space-md);
+}
+
+.latestPhoto {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.latestPhoto span {
+    font-weight: 600;
+}
+
+.uploadButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    border: none;
+    border-radius: 999px;
+    padding: 0.9rem 1rem;
+    background: #222;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.uploadButton:hover {
+    transform: translateY(-1px);
+}
+
+.uploadDisabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.errorText {
+    color: var(--color-error);
+    font-size: 0.85rem;
+    margin-bottom: var(--space-sm);
+}
+
+.successText {
+    color: #1f7a39;
+    font-size: 0.85rem;
+    margin-bottom: var(--space-sm);
+}
+
 /* Responsive */
 @media (max-width: 480px) {
     .statsGrid {
