@@ -21,6 +21,16 @@ export default function BottomNav() {
             </Link>
 
             <Link
+                href="/recommend"
+                className={`${styles.navItem} ${isActive('/recommend') ? styles.active : ''}`}
+            >
+                <div style={{ position: 'relative' }}>
+                    <span style={{ fontSize: '24px' }}>✨</span>
+                </div>
+                <span className={styles.label}>AI 추천</span>
+            </Link>
+
+            <Link
                 href="/mypage"
                 className={`${styles.navItem} ${isActive('/mypage') ? styles.active : ''}`}
             >

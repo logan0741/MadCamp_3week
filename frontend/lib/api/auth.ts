@@ -13,8 +13,6 @@ interface TokenResponse {
 interface RegisterData {
     username: string;
     password: string;
-    height?: number;
-    weight?: number;
 }
 
 export const authApi = {
