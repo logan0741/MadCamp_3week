@@ -19,8 +19,12 @@ from services.size_scraper import (
     save_cached_sizes,
     scrape_musinsa_sizes,
 )
-from services.color_analyzer import analyze_product_colors
-from services.recommendation_service import get_style_recommendations
+from services.ai_client import (
+    ai_client,
+    get_ai_recommendations,
+    analyze_product_color,
+    check_gpu_server_health
+)
 
 router = APIRouter()
 
@@ -184,7 +188,7 @@ async def get_product_colors(
 ):
     """
     Get PCCS color analysis for a product.
-    Extracts dominant colors from product images and converts to PCCS coordinates.
+    Calls GPU server AI API for color analysis.
     """
     product = ProductService.get_product_by_id(db, product_id)
     if not product:
@@ -194,37 +198,21 @@ async def get_product_colors(
         raise HTTPException(status_code=400, detail="Product has no images for analysis")
 
     try:
-        # Get image URLs
-        image_urls = product.image_urls if isinstance(product.image_urls, list) else []
-        if isinstance(product.image_urls, str):
-            import json
-            try:
-                image_urls = json.loads(product.image_urls)
-            except:
-                image_urls = []
+        # Call GPU server for color analysis
+        color_data = await analyze_product_color(product.thumbnail_url)
 
-        # Analyze colors
-        color_data = await analyze_product_colors(product.thumbnail_url, image_urls)
-
-        if not color_data:
+        if color_data.get("status") == "error":
             return {
                 "product_id": product_id,
-                "error": "Could not analyze colors. ML dependencies may not be installed.",
+                "error": color_data.get("message", "GPU server error"),
                 "colors": None
             }
 
         return {
             "product_id": product_id,
-            "pccs": {
-                "hue": color_data['pccs_hue'],
-                "value": color_data['pccs_value'],
-                "chroma": color_data['pccs_chroma'],
-                "tone": color_data['pccs_tone'],
-            },
-            "primary_color": color_data['primary_color_hex'],
-            "palette": color_data['color_palette'],
-            "temperature": color_data['color_temperature'],
-            "complementary_suggestions": color_data['complementary_suggestions']
+            "pccs": color_data.get("pccs", {}),
+            "primary_color": color_data.get("dominant_color"),
+            "analysis": color_data
         }
 
     except Exception as exc:
@@ -243,18 +231,158 @@ async def get_product_recommendations(
 ):
     """
     Get style-matched product recommendations for outfit coordination.
-    Returns products from different categories that match the source product's style/color.
+    Calls GPU server AI API for recommendations based on style/color analysis.
     """
     product = ProductService.get_product_by_id(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     try:
-        recommendations = get_style_recommendations(db, product_id)
-        return recommendations
+        # Prepare product data for GPU server
+        import json
+        image_urls = []
+        if product.image_urls:
+            if isinstance(product.image_urls, str):
+                try:
+                    image_urls = json.loads(product.image_urls)
+                except:
+                    image_urls = []
+            else:
+                image_urls = product.image_urls
+        
+        product_data = {
+            "id": product.musinsa_id,
+            "title": product.title,
+            "brand": product.brand,
+            "thumbnail_url": product.thumbnail_url,
+            "image_urls": image_urls,
+            "price": product.original_price,
+        }
+        
+        # Call GPU server for AI recommendations
+        result = await get_ai_recommendations(product_data)
+        
+        if result.get("status") == "error":
+            return {
+                "product_id": product_id,
+                "error": result.get("message", "GPU server error"),
+                "recommendations": []
+            }
+        
+        return {
+            "product_id": product_id,
+            "recommendations": result.get("recommendations", []),
+            "color_analysis": result.get("color_analysis", {}),
+            "status": "success"
+        }
+        
     except Exception as exc:
         return {
             "product_id": product_id,
             "error": str(exc),
-            "recommendations": {}
+            "recommendations": []
+        }
+
+
+@router.get("/gpu/health")
+async def check_gpu_health():
+    """Check GPU server AI API health status"""
+    is_healthy = await check_gpu_server_health()
+    return {
+        "gpu_server": "healthy" if is_healthy else "unreachable",
+        "url": "http://192.168.0.250:8000"
+    }
+
+
+@router.get("/{product_id}/ai-recommend")
+async def get_ai_recommend(
+    product_id: int,
+    tone_preference: str = None,
+    db: Session = Depends(get_db)
+):
+    """
+    상품에 대한 AI 추천 조회 (GPU 서버 호출)
+    - 색상 분석
+    - 스타일 추천
+    - 매칭 상품 제안
+    """
+    product = ProductService.get_product_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="상품을 찾을 수 없습니다.")
+    
+    try:
+        import json
+        image_urls = []
+        if product.image_urls:
+            if isinstance(product.image_urls, str):
+                try:
+                    image_urls = json.loads(product.image_urls)
+                except:
+                    image_urls = []
+            else:
+                image_urls = product.image_urls
+        
+        result = await ai_client.get_recommendation(
+            product_id=str(product.id),
+            title=product.title,
+            thumbnail_url=product.thumbnail_url,
+            image_urls=image_urls,
+            brand=product.brand,
+            price=product.original_price,
+            tone_preference=tone_preference
+        )
+        
+        return result
+        
+    except Exception as exc:
+        return {
+            "status": "error",
+            "message": str(exc),
+            "product_id": product_id
+        }
+
+
+@router.post("/{product_id}/analyze-color")
+async def analyze_color_endpoint(
+    product_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    상품 색상 분석 요청 (GPU 서버 호출)
+    분석된 PCCS 색상 정보를 반환
+    """
+    product = ProductService.get_product_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="상품을 찾을 수 없습니다.")
+    
+    if not product.thumbnail_url:
+        raise HTTPException(status_code=400, detail="상품 이미지가 없습니다.")
+    
+    try:
+        import json
+        image_urls = []
+        if product.image_urls:
+            if isinstance(product.image_urls, str):
+                try:
+                    image_urls = json.loads(product.image_urls)
+                except:
+                    image_urls = []
+            else:
+                image_urls = product.image_urls
+        
+        result = await ai_client.analyze_color(
+            image_url=product.thumbnail_url,
+            additional_urls=image_urls[:3]
+        )
+        
+        return {
+            "product_id": product_id,
+            **result
+        }
+        
+    except Exception as exc:
+        return {
+            "status": "error",
+            "message": str(exc),
+            "product_id": product_id
         }

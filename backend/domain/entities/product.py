@@ -1,7 +1,7 @@
 """
 Product Entity - Product and PriceLog models
 """
-from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, Date, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Date, DateTime, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -20,13 +20,22 @@ class Product(Base):
     thumbnail_url = Column(Text, nullable=True)
     image_urls = Column(Text, nullable=True)  # JSON array of image URLs for carousel
     original_price = Column(Integer, nullable=True)  # Price before discount
-    is_garment_modeled = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # AI Analysis Fields
+    is_garment_modeled = Column(Boolean, default=False)
+    
+    # Color Analysis
+    pccs_hue = Column(String(20), nullable=True)
+    pccs_value = Column(String(20), nullable=True)
+    pccs_chroma = Column(String(20), nullable=True)
+    pccs_tone = Column(String(20), nullable=True)
+    primary_color_hex = Column(String(20), nullable=True)
+    color_temperature = Column(String(20), nullable=True)
 
     # Relationships
     interests = relationship("UserInterest", back_populates="product", cascade="all, delete-orphan")
     price_logs = relationship("PriceLog", back_populates="product", cascade="all, delete-orphan")
-    ai_tasks = relationship("AITask", back_populates="product", cascade="all, delete-orphan")
 
 
 class PriceLog(Base):

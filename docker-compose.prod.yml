@@ -13,7 +13,6 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
-      - NEXT_PUBLIC_STATIC_URL=http://nginx-static:8080
     depends_on:
       - backend
     restart: unless-stopped
@@ -40,10 +39,9 @@ services:
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
-      - AI_PIPELINE_BASE_URL=http://ai-engine:8001
-      - STATIC_BASE_URL=http://nginx-static:8080
     volumes:
-      - ./backend/app.db:/app/app.db  # SQLite 호환용 (마이그레이션 후 제거)
+      - ./backend/app.db:/app/app.db
+      - ./backend/uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,72 +50,6 @@ services:
       - memeforty-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ===========================================
-  # AI Engine - FastAPI AI Pipeline
-  # ===========================================
-  ai-engine:
-    build:
-      context: ./ai-pipeline
-      dockerfile: Dockerfile
-    container_name: memeforty-ai-engine
-    ports:
-      - "8001:8001"
-    environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://memeforty:${POSTGRES_PASSWORD}@postgres:5432/memeforty}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - OUTPUT_DIR=/data/outputs
-      - UPLOAD_DIR=/data/uploads
-      - STATIC_BASE_URL=http://nginx-static:8080
-      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
-    volumes:
-      - ai-data:/data
-      - ./ai-pipeline/models:/app/models:ro
-    depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    restart: unless-stopped
-    networks:
-      - memeforty-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ===========================================
-  # Nginx Static - Static File Server (PNG/JSON)
-  # ===========================================
-  nginx-static:
-    image: nginx:alpine
-    container_name: memeforty-nginx-static
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./nginx/static.conf:/etc/nginx/conf.d/default.conf:ro
-      - ai-data:/data:ro
-    depends_on:
-      - ai-engine
-    restart: unless-stopped
-    networks:
-      - memeforty-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -135,33 +67,13 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password_change_me}
       - POSTGRES_DB=${POSTGRES_DB:-memeforty}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data-v3:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: unless-stopped
     networks:
       - memeforty-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-memeforty}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ===========================================
-  # Redis - Celery Broker & Cache
-  # ===========================================
-  redis:
-    image: redis:7-alpine
-    container_name: memeforty-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
-    restart: unless-stopped
-    networks:
-      - memeforty-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -184,8 +96,6 @@ services:
     depends_on:
       - frontend
       - backend
-      - ai-engine
-      - nginx-static
     restart: unless-stopped
     networks:
       - memeforty-network
@@ -194,11 +104,7 @@ services:
 # Named Volumes
 # ===========================================
 volumes:
-  ai-data:
-    driver: local
-  postgres-data:
-    driver: local
-  redis-data:
+  postgres-data-v3:
     driver: local
 
 # ===========================================

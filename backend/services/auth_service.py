@@ -35,9 +35,7 @@ class AuthService:
         new_user = User(
             username=user_data.username,
             password_hash=get_password_hash(user_data.password),
-            height=user_data.height,
-            weight=user_data.weight,
-            is_avatar_created=False
+            # height, weight, is_avatar_created removed from User model
         )
         db.add(new_user)
         db.commit()

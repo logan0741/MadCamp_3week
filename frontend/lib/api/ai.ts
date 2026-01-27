@@ -1,28 +1,65 @@
-/**
- * AI API - AI tasks and onboarding endpoints
- */
-
 import { apiRequest, uploadRequest } from './client';
-import type { AITask, OnboardingUploadResponse } from '@/lib/types';
 
-export const onboardingApi = {
-    upload: (video: File) => {
-        const formData = new FormData();
-        formData.append('video', video);
-        return uploadRequest<OnboardingUploadResponse>('/onboarding/upload', formData);
-    },
+export interface Photo {
+    filename: string;
+    url: string;
+}
 
-    getTaskStatus: (taskId: string) =>
-        apiRequest<AITask>(`/onboarding/task/${taskId}`),
-};
+export interface RecommendationItem {
+    category: string;
+    brand: string;
+    product_name: string;
+    musinsa_id?: string;
+    url?: string;
+    color: string;
+    reason: string;
+}
+
+export interface AnalysisResult {
+    user_analysis: {
+        personal_color: string;
+        skin_tone_hex: string;
+        best_colors: string[];
+        worst_colors: string[];
+    };
+    fashion_terrorist_check: {
+        is_terrorist: boolean;
+        mismatch_score: number;
+        warning_message: string;
+    };
+    recommendations: RecommendationItem[];
+}
+
+export interface AIResponse {
+    status: 'success' | 'error' | 'fashion_terrorist';
+    message?: string;
+    data?: AnalysisResult;
+    processed_count?: number;
+}
 
 export const aiApi = {
-    requestFitting: (productId: number) =>
-        apiRequest<AITask>(`/ai/fit/${productId}`, { method: 'POST' }),
+    // List uploaded user photos
+    getPhotos: async (): Promise<{ photos: Photo[] }> => {
+        return apiRequest('/user/photos', {
+            method: 'GET'
+        });
+    },
 
-    getTasks: () =>
-        apiRequest<AITask[]>('/ai/tasks'),
+    // Trigger AI analysis with selected photo
+    analyzePhoto: async (filename: string): Promise<AIResponse> => {
+        return apiRequest('/user/ai/analyze', {
+            method: 'POST',
+            body: JSON.stringify({ filename })
+        });
+    }
+};
 
-    getTaskStatus: (taskId: string) =>
-        apiRequest<AITask>(`/ai/task/${taskId}`),
+export const onboardingApi = {
+    upload: async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Use the new /user/photos endpoint
+        return uploadRequest('/user/photos', formData);
+    }
 };

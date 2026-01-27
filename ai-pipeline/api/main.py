@@ -250,6 +250,13 @@ app.include_router(
     tags=["Garment Pipeline"],
 )
 
+from api.routers import recommend
+app.include_router(
+    recommend.router,
+    prefix="/ai-recommend",
+    tags=["AI Recommendations"],
+)
+
 
 # ============================================
 # Entry Point

@@ -14,9 +14,6 @@ export default function RegisterPage() {
         username: '',
         password: '',
         confirmPassword: '',
-        height: '',
-        weight: '',
-        gender: '',
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -50,9 +47,6 @@ export default function RegisterPage() {
             const user = await authApi.register({
                 username: formData.username,
                 password: formData.password,
-                height: formData.height ? parseFloat(formData.height) : undefined,
-                weight: formData.weight ? parseFloat(formData.weight) : undefined,
-                gender: formData.gender || undefined,
             });
 
             // Auto login after registration
@@ -118,57 +112,6 @@ export default function RegisterPage() {
                             onChange={handleChange}
                             required
                         />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
-                        <div className="input-group" style={{ flex: 1 }}>
-                            <label className="input-label">키 (cm)</label>
-                            <input
-                                type="number"
-                                name="height"
-                                className="input"
-                                placeholder="170"
-                                value={formData.height}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="input-group" style={{ flex: 1 }}>
-                            <label className="input-label">몸무게 (kg)</label>
-                            <input
-                                type="number"
-                                name="weight"
-                                className="input"
-                                placeholder="65"
-                                value={formData.weight}
-                                onChange={handleChange}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="input-group">
-                        <label className="input-label">성별</label>
-                        <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                <input
-                                    type="radio"
-                                    name="gender"
-                                    value="male"
-                                    checked={formData.gender === 'male'}
-                                    onChange={handleChange}
-                                />
-                                남성
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                <input
-                                    type="radio"
-                                    name="gender"
-                                    value="female"
-                                    checked={formData.gender === 'female'}
-                                    onChange={handleChange}
-                                />
-                                여성
-                            </label>
-                        </div>
                     </div>
 
                     {error && <div className={styles.error}>{error}</div>}

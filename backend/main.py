@@ -23,11 +23,6 @@ logger = logging.getLogger(__name__)
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Create upload directories
-os.makedirs(settings.VIDEO_UPLOAD_DIR, exist_ok=True)
-os.makedirs(settings.AVATAR_UPLOAD_DIR, exist_ok=True)
-os.makedirs(settings.GARMENT_UPLOAD_DIR, exist_ok=True)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,6 +54,8 @@ app.add_middleware(
 )
 
 # Static files for uploads
+import os
+os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include API v1 routers

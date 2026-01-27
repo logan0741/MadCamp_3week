@@ -9,8 +9,6 @@ class UserCreate(BaseModel):
     """Schema for user registration"""
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=6)
-    height: Optional[float] = None
-    weight: Optional[float] = None
 
 
 class UserLogin(BaseModel):

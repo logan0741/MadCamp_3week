@@ -1,7 +1,7 @@
 """
 User Entity - User and UserInterest models
 """
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -15,15 +15,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
     password_hash = Column(Text, nullable=False)
-    is_avatar_created = Column(Boolean, default=False)
-    height = Column(Float, nullable=True)
-    weight = Column(Float, nullable=True)
-    avatar_url = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     interests = relationship("UserInterest", back_populates="user", cascade="all, delete-orphan")
-    ai_tasks = relationship("AITask", back_populates="user", cascade="all, delete-orphan")
 
 
 class UserInterest(Base):
