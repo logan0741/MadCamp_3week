@@ -3,15 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { userApi, getToken } from '@/lib/api';
+import { userApi, productApi, getToken, Product } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import BottomNav from '@/components/layout/BottomNav';
+import { User, Heart, Bell, Tag, ChevronRight } from 'lucide-react';
 import styles from './mypage.module.css';
 
 export default function MyPage() {
     const router = useRouter();
-    const { user, setUser } = useStore();
+    const { user, setUser, products, setProducts } = useStore();
     const [isLoading, setIsLoading] = useState(true);
+    const [stats, setStats] = useState({
+        productCount: 0,
+        alertCount: 0,
+        brandCount: 0
+    });
+    const [recentProducts, setRecentProducts] = useState<Product[]>([]);
 
     useEffect(() => {
         const token = getToken();
@@ -20,15 +27,33 @@ export default function MyPage() {
             return;
         }
 
-        loadUser();
+        loadData();
     }, [router]);
 
-    const loadUser = async () => {
+    const loadData = async () => {
         try {
-            const userData = await userApi.getStatus();
+            const [userData, productsData] = await Promise.all([
+                userApi.getStatus(),
+                productApi.getAll()
+            ]);
+
             setUser(userData);
+            setProducts(productsData.products);
+
+            // Calculate stats
+            const allProducts = productsData.products;
+            const uniqueBrands = new Set(allProducts.map((p: Product) => p.brand).filter(Boolean));
+
+            setStats({
+                productCount: allProducts.length,
+                alertCount: 0, // 가격 알림 기능 미구현
+                brandCount: uniqueBrands.size
+            });
+
+            // Get recent products (최근 3개)
+            setRecentProducts(allProducts.slice(0, 3));
         } catch (err) {
-            console.error('Failed to load user:', err);
+            console.error('Failed to load data:', err);
         } finally {
             setIsLoading(false);
         }
@@ -36,9 +61,6 @@ export default function MyPage() {
 
     return (
         <div className={styles.page}>
-            {/* Header */}
-            {/* Header removed for consistent bottom navigation */}
-
             <main className={styles.main}>
                 {isLoading ? (
                     <div className={styles.loading}>
@@ -47,65 +69,99 @@ export default function MyPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Avatar Section */}
-                        <section className={styles.avatarSection}>
-                            <div className={styles.avatarContainer}>
-                                {user?.is_avatar_created ? (
-                                    <>
-                                        <div className={styles.canvasWrapper} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: '#111' }}>
-                                            <div style={{ fontSize: '4rem', opacity: 0.5 }}>👤</div>
-                                            <p style={{ color: '#888', textAlign: 'center' }}>
-                                                3D 뷰어 로딩 실패<br />
-                                                <span style={{ fontSize: '0.8rem' }}>(라이브러리 호환성 문제로 비활성화됨)</span>
-                                            </p>
-                                        </div>
-                                        <div className={styles.viewerNote}>
-                                            * 실제 3D 게이밍 엔진(Unity) 연동을 위해서는 빌드 파일이 필요합니다.<br />
-                                            현재는 정적 이미지가 표시됩니다.
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className={styles.noAvatar}>
-                                        <span className={styles.avatarPlaceholder}>👤</span>
-                                        <p>아직 아바타가 생성되지 않았습니다</p>
-                                    </div>
-                                )}
+                        {/* Profile Header */}
+                        <section className={styles.profileHeader}>
+                            <div className={styles.avatarIcon}>
+                                <User size={32} />
                             </div>
-
-                            <div className={styles.avatarInfo}>
-                                <h1>나의 디지털 트윈</h1>
-                                <p className={styles.updateDate}>
-                                    {user?.is_avatar_created
-                                        ? '성공적으로 생성되었습니다'
-                                        : '아바타를 생성해주세요'}
-                                </p>
-
-                                <Link
-                                    href="/onboarding"
-                                    className={`btn btn-primary btn-full ${styles.modelBtn}`}
-                                >
-                                    {user?.is_avatar_created ? '다시 모델링하기' : '아바타 생성하기'}
-                                </Link>
+                            <div className={styles.profileInfo}>
+                                <h1 className={styles.username}>{user?.username}</h1>
+                                <div className={styles.bodyInfo}>
+                                    {user?.height && <span>{user.height}cm</span>}
+                                    {user?.height && user?.weight && <span className={styles.dot}>·</span>}
+                                    {user?.weight && <span>{user.weight}kg</span>}
+                                    {!user?.height && !user?.weight && <span className={styles.muted}>체형 정보 미입력</span>}
+                                </div>
                             </div>
                         </section>
 
+                        {/* Activity Stats */}
+                        <section className={styles.statsSection}>
+                            <h2 className={styles.sectionTitle}>나의 활동</h2>
+                            <div className={styles.statsGrid}>
+                                <Link href="/dashboard" className={styles.statCard}>
+                                    <div className={styles.statIcon}>
+                                        <Heart size={20} />
+                                    </div>
+                                    <span className={styles.statNumber}>{stats.productCount}</span>
+                                    <span className={styles.statLabel}>등록 상품</span>
+                                </Link>
+                                <div className={styles.statCard}>
+                                    <div className={styles.statIcon}>
+                                        <Bell size={20} />
+                                    </div>
+                                    <span className={styles.statNumber}>{stats.alertCount}</span>
+                                    <span className={styles.statLabel}>가격 알림</span>
+                                </div>
+                                <div className={styles.statCard}>
+                                    <div className={styles.statIcon}>
+                                        <Tag size={20} />
+                                    </div>
+                                    <span className={styles.statNumber}>{stats.brandCount}</span>
+                                    <span className={styles.statLabel}>브랜드</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Recent Wishlist Preview */}
+                        {recentProducts.length > 0 && (
+                            <section className={styles.recentSection}>
+                                <div className={styles.sectionHeader}>
+                                    <h2 className={styles.sectionTitle}>최근 등록 상품</h2>
+                                    <Link href="/dashboard" className={styles.viewAll}>
+                                        전체보기 <ChevronRight size={16} />
+                                    </Link>
+                                </div>
+                                <div className={styles.recentGrid}>
+                                    {recentProducts.map(product => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.id}`}
+                                            className={styles.recentCard}
+                                        >
+                                            <div className={styles.recentImage}>
+                                                {product.thumbnail_url ? (
+                                                    <img src={product.thumbnail_url} alt={product.title || ''} />
+                                                ) : (
+                                                    <div className={styles.placeholder}>👕</div>
+                                                )}
+                                            </div>
+                                            <div className={styles.recentInfo}>
+                                                <span className={styles.recentBrand}>{product.brand}</span>
+                                                <span className={styles.recentPrice}>
+                                                    {product.current_price?.toLocaleString()}원
+                                                </span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
                         {/* Profile Section */}
                         <section className={styles.profileSection}>
-                            <h2>내 정보</h2>
-
+                            <h2 className={styles.sectionTitle}>내 정보</h2>
                             <div className={styles.profileCard}>
                                 <div className={styles.profileItem}>
                                     <span className={styles.profileLabel}>아이디</span>
                                     <span className={styles.profileValue}>{user?.username}</span>
                                 </div>
-
                                 <div className={styles.profileItem}>
                                     <span className={styles.profileLabel}>키</span>
                                     <span className={styles.profileValue}>
                                         {user?.height ? `${user.height} cm` : '미입력'}
                                     </span>
                                 </div>
-
                                 <div className={styles.profileItem}>
                                     <span className={styles.profileLabel}>몸무게</span>
                                     <span className={styles.profileValue}>
@@ -117,18 +173,16 @@ export default function MyPage() {
 
                         {/* Settings Section */}
                         <section className={styles.settingsSection}>
-                            <h2>설정</h2>
-
+                            <h2 className={styles.sectionTitle}>설정</h2>
                             <div className={styles.settingsList}>
                                 <button className={styles.settingItem}>
                                     <span>알림 설정</span>
-                                    <span className={styles.arrow}>→</span>
+                                    <ChevronRight size={18} className={styles.arrow} />
                                 </button>
                                 <button className={styles.settingItem}>
                                     <span>가격 알림 기준</span>
-                                    <span className={styles.arrow}>→</span>
+                                    <ChevronRight size={18} className={styles.arrow} />
                                 </button>
-
                                 <button
                                     className={`${styles.settingItem} ${styles.danger}`}
                                     onClick={() => {
@@ -138,7 +192,7 @@ export default function MyPage() {
                                     }}
                                 >
                                     <span>로그아웃</span>
-                                    <span className={styles.arrow}>→</span>
+                                    <ChevronRight size={18} className={styles.arrow} />
                                 </button>
                             </div>
                         </section>

@@ -28,12 +28,8 @@ export default function LoginPage() {
             const user = await userApi.getStatus();
             setUser(user);
 
-            // Redirect based on avatar status
-            if (!user.is_avatar_created) {
-                router.push('/onboarding');
-            } else {
-                router.push('/dashboard');
-            }
+            // Redirect to dashboard
+            router.push('/dashboard');
         } catch (err) {
             setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
         } finally {
