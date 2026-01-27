@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 
-from core.database import Base
+from infrastructure.persistence.database import Base
 
 
 class AITask(Base):

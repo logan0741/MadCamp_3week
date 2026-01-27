@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import os
 
-from core.database import get_db, SQLALCHEMY_DATABASE_URL
+from infrastructure.persistence.database import get_db, SQLALCHEMY_DATABASE_URL
 from core.config import settings
 from domain.entities import User, Product, AITask
 from domain.schemas import AITaskResponse

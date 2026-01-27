@@ -5,21 +5,21 @@ Thin controller layer - delegates to ProductService
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from core.database import get_db
+from infrastructure.persistence.database import get_db
 from domain.entities import User
 from domain.schemas import (
     ProductTrackRequest, ProductResponse, ProductListResponse,
     PriceHistoryResponse
 )
 from api.dependencies import get_current_user
-from services.product_service import ProductService
-from services.scraper import scrape_musinsa_product
-from services.size_scraper import (
+from application.product_service import ProductService
+from infrastructure.clients.scraper import scrape_musinsa_product
+from infrastructure.clients.size_scraper import (
     get_cached_sizes,
     save_cached_sizes,
     scrape_musinsa_sizes,
 )
-from services.ai_client import (
+from infrastructure.clients.ai_client import (
     ai_client,
     get_ai_recommendations,
     analyze_product_color,

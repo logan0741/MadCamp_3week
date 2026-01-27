@@ -7,7 +7,7 @@ import os
 import uuid
 import aiofiles
 
-from core.database import get_db, SQLALCHEMY_DATABASE_URL
+from infrastructure.persistence.database import get_db, SQLALCHEMY_DATABASE_URL
 from core.config import settings
 from domain.entities import User, AITask
 from domain.schemas import OnboardingUploadResponse, AITaskResponse

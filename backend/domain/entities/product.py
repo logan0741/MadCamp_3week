@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, Date, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from core.database import Base
+from infrastructure.persistence.database import Base
 
 
 class Product(Base):

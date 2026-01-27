@@ -8,11 +8,11 @@ import shutil
 import os
 import uuid
 
-from core.database import get_db
+from infrastructure.persistence.database import get_db
 from domain.entities import User
 from domain.schemas import UserStatus, UserUpdate
 from api.dependencies import get_current_user
-from services.user_service import UserService
+from application.user_service import UserService
 
 router = APIRouter()
 
@@ -165,7 +165,7 @@ async def analyze_photo(
     2. Call GPU (analyze_custom)
     3. If valid, crawl/track products asynchronously (or sync if fast enough)
     """
-    from services.ai_client import analyze_custom_prompt
+    from infrastructure.clients.ai_client import analyze_custom_prompt
     import os
     
     filename = request.get("filename")
@@ -201,7 +201,7 @@ async def analyze_photo(
         
     # 5. Process Recommendations (Crawl & Save)
     # Import here to avoid circular deps
-    from services.product_service import ProductService
+    from application.product_service import ProductService
     import logging
     logger = logging.getLogger(__name__)
 
