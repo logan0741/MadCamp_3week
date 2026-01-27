@@ -147,71 +147,53 @@
     color: var(--color-text-muted);
 }
 
-/* Recent Section */
-.recentSection {
-    margin-bottom: var(--space-2xl);
-}
-
-.recentGrid {
+/* Gallery Section (Daily Look) */
+.galleryGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-md);
+    margin-bottom: var(--space-lg);
 }
 
-.recentCard {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-    transition: transform var(--transition-fast);
-}
-
-.recentCard:hover {
-    transform: translateY(-2px);
-}
-
-.recentImage {
-    width: 100%;
-    aspect-ratio: 1;
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
+.galleryItem {
+    aspect-ratio: 3 / 4;
     border-radius: var(--radius-md);
     overflow: hidden;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
 }
 
-.recentImage img {
+.galleryItem img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    opacity: 0.5;
-}
-
-.recentInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.recentBrand {
-    font-size: 0.75rem;
+.emptyGallery {
+    grid-column: span 3;
+    padding: var(--space-2xl) 0;
+    text-align: center;
     color: var(--color-text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.9rem;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--color-border);
 }
 
-.recentPrice {
+.addDailyBtn {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: var(--color-accent);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.addDailyBtn:hover {
+    background: rgba(255, 77, 0, 0.05);
 }
 
 /* Profile Section */
@@ -377,14 +359,32 @@
     margin-bottom: var(--space-md);
 }
 
-.latestPhoto {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-sm);
+.previewContainer {
+    margin-bottom: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
 }
 
-.latestPhoto span {
+.previewLabel {
+    font-size: 0.85rem;
     font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.previewImage {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-tertiary);
+}
+
+.previewImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .uploadButton {

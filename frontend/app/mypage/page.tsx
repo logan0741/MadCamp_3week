@@ -3,7 +3,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { userApi, productApi, getToken, Product, onboardingApi, aiApi } from '@/lib/api';
+import { userApi, productApi, getToken, Product, onboardingApi, aiApi, Photo } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import BottomNav from '@/components/layout/BottomNav';
 import { User, Heart, Bell, Tag, ChevronRight, Camera, X } from 'lucide-react';
@@ -19,8 +19,10 @@ export default function MyPage() {
         brandCount: 0
     });
     const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+    const [dailyPhotos, setDailyPhotos] = useState<Photo[]>([]);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDailyUploading, setIsDailyUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [latestPhoto, setLatestPhoto] = useState<string | null>(null);
@@ -37,13 +39,15 @@ export default function MyPage() {
 
     const loadData = async () => {
         try {
-            const [userData, productsData] = await Promise.all([
+            const [userData, productsData, photosData] = await Promise.all([
                 userApi.getStatus(),
-                productApi.getAll()
+                productApi.getAll(),
+                aiApi.getPhotos('daily')
             ]);
 
             setUser(userData);
             setProducts(productsData.products);
+            setDailyPhotos(photosData.photos || []);
 
             // Calculate stats
             const allProducts = productsData.products;
@@ -66,7 +70,7 @@ export default function MyPage() {
 
     const refreshLatestPhoto = async () => {
         try {
-            const data = await aiApi.getPhotos();
+            const data = await aiApi.getPhotos('model');
             const newest = data.photos?.[0];
             if (newest?.filename) {
                 setLatestPhoto(newest.filename);
@@ -75,6 +79,15 @@ export default function MyPage() {
             console.error('Failed to load photos:', err);
         }
     };
+
+    const refreshDailyPhotos = async () => {
+        try {
+            const data = await aiApi.getPhotos('daily');
+            setDailyPhotos(data.photos || []);
+        } catch (err) {
+            console.error('Failed to load daily photos:', err);
+        }
+    }
 
     const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -85,7 +98,7 @@ export default function MyPage() {
         setUploadSuccess(null);
 
         try {
-            await onboardingApi.upload(file);
+            await onboardingApi.upload(file, 'model');
             setUploadSuccess('업로드가 완료되었습니다. 저장된 사진은 이후 분석에 사용됩니다.');
             await refreshLatestPhoto();
         } catch (err) {
@@ -93,6 +106,23 @@ export default function MyPage() {
             setUploadError('업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
             setIsUploading(false);
+            event.target.value = '';
+        }
+    };
+
+    const handleDailyUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsDailyUploading(true);
+        try {
+            await onboardingApi.upload(file, 'daily');
+            await refreshDailyPhotos();
+        } catch (err) {
+            console.error('Daily upload failed:', err);
+            alert('사진 업로드에 실패했습니다.');
+        } finally {
+            setIsDailyUploading(false);
             event.target.value = '';
         }
     };
@@ -151,40 +181,35 @@ export default function MyPage() {
                             </div>
                         </section>
 
-                        {/* Recent Wishlist Preview */}
-                        {recentProducts.length > 0 && (
-                            <section className={styles.recentSection}>
-                                <div className={styles.sectionHeader}>
-                                    <h2 className={styles.sectionTitle}>최근 등록 상품</h2>
-                                    <Link href="/dashboard" className={styles.viewAll}>
-                                        전체보기 <ChevronRight size={16} />
-                                    </Link>
-                                </div>
-                                <div className={styles.recentGrid}>
-                                    {recentProducts.map(product => (
-                                        <Link
-                                            key={product.id}
-                                            href={`/product/${product.id}`}
-                                            className={styles.recentCard}
-                                        >
-                                            <div className={styles.recentImage}>
-                                                {product.thumbnail_url ? (
-                                                    <img src={product.thumbnail_url} alt={product.title || ''} />
-                                                ) : (
-                                                    <div className={styles.placeholder}>👕</div>
-                                                )}
-                                            </div>
-                                            <div className={styles.recentInfo}>
-                                                <span className={styles.recentBrand}>{product.brand}</span>
-                                                <span className={styles.recentPrice}>
-                                                    {product.current_price?.toLocaleString()}원
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+                        {/* Daily Fashion Gallery Section (Replacing Recent Wishlist) */}
+                        <section className={styles.recentSection}>
+                            <div className={styles.sectionHeader}>
+                                <h2 className={styles.sectionTitle}>나의 데일리 룩</h2>
+                                <label className={styles.addDailyBtn}>
+                                    {isDailyUploading ? '...' : '+ 추가'}
+                                    <input
+                                        type="file"
+                                        hidden
+                                        accept="image/*"
+                                        onChange={handleDailyUpload}
+                                        disabled={isDailyUploading}
+                                    />
+                                </label>
+                            </div>
+                            <div className={styles.galleryGrid}>
+                                {dailyPhotos.length > 0 ? (
+                                    dailyPhotos.map((photo, index) => (
+                                        <div key={photo.filename} className={styles.galleryItem}>
+                                            <img src={photo.url} alt={`Daily Look ${index + 1}`} />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className={styles.emptyGallery}>
+                                        올린 사진이 없습니다.
+                                    </div>
+                                )}
+                            </div>
+                        </section>
 
                         {/* Profile Section */}
                         <section className={styles.profileSection}>
@@ -301,9 +326,15 @@ export default function MyPage() {
                                     </p>
 
                                     {latestPhoto && (
-                                        <p className={styles.latestPhoto}>
-                                            최근 저장된 사진: <span>{latestPhoto}</span>
-                                        </p>
+                                        <div className={styles.previewContainer}>
+                                            <p className={styles.previewLabel}>최근 저장된 사진</p>
+                                            <div className={styles.previewImage}>
+                                                <img
+                                                    src={`/api/uploads/users/${latestPhoto}`}
+                                                    alt="최근 업로드 사진"
+                                                />
+                                            </div>
+                                        </div>
                                     )}
 
                                     {uploadError && <p className={styles.errorText}>{uploadError}</p>}
@@ -313,7 +344,7 @@ export default function MyPage() {
                                         className={`${styles.uploadButton} ${isUploading ? styles.uploadDisabled : ''}`}
                                     >
                                         <Camera size={18} />
-                                        {isUploading ? '업로드 중...' : '사진 선택하기'}
+                                        {isUploading ? '업로드 중...' : (latestPhoto ? '사진 수정하기' : '사진 선택하기')}
                                         <input
                                             type="file"
                                             hidden
