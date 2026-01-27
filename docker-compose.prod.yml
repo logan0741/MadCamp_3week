@@ -41,6 +41,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
     volumes:
       - ./backend/app.db:/app/app.db
+      - ./backend/uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
