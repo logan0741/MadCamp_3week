@@ -9,7 +9,7 @@ export { getToken, setToken, removeToken, apiRequest, uploadRequest } from './cl
 export { authApi } from './auth';
 export { userApi } from './user';
 export { productApi } from './product';
-export { productApi } from './product';
+
 export * from './ai';
 
 // Re-export types for backward compatibility
