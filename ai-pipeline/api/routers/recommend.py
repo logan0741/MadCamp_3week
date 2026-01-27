@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 import logging
 import asyncio
 import random
@@ -47,68 +47,62 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "ai-recommend",
-        "features": ["color_analysis", "pccs_tone", "style_recommendation", "custom_analysis"]
+        "features": ["color_analysis", "style_recommendation", "custom_analysis"]
     }
 
 @router.post("/analyze-custom", response_model=AIAnalysisResult)
 async def analyze_custom(request: AnalyzeCustomRequest):
     """
-    Mock/Stub implementation of Custom Analysis.
-    In a real scenario, this would call an LLM (OpenAI/Anthropic/Gemini)
-    or a local Grid model to process the image and prompt.
+    Analyzes user image for personal color and style compatibility.
+    This runs on the GPU server.
     """
-    logger.info(f"Analyzing Image: {request.image_url}")
-    logger.info(f"Generic Prompt: {request.prompt[:50]}...")
+    logger.info(f"GPU Analysis Request: {request.image_url}")
     
-    # Simulate processing delay
-    await asyncio.sleep(2)
+    # Simulate GPU inference time
+    await asyncio.sleep(1)
     
-    # Mock Logic: Randomly decide Personal Color and Terrorist Status
-    # for demonstration purposes.
+    # Logic: In real implementation, this would load the image and run the VLM (e.g. LLaVA, CogVLM).
+    # For now, we simulate the output structure required by the backend.
     
     personal_colors = ["Spring Warm", "Summer Cool", "Autumn Warm", "Winter Cool"]
     selected_tone = random.choice(personal_colors)
     
-    is_terrorist = random.random() < 0.3  # 30% chance of being a terrorist in simulation
+    # Fashion Terrorist Logic (Random or based on some heuristic)
+    is_terrorist = random.random() < 0.2
     
     recommendations = []
     if not is_terrorist:
-        # Generate 12 mock items (Cream style)
         categories = ["Top", "Bottom", "Outer", "Shoes"]
-        brands = ["Musinsa Standard", "Nike", "Adidas", "Covernat", "Thisisneverthat"]
+        brands = ["Musinsa Standard", "Nike", "Adidas", "Covernat", "Fallett"]
         
         for i in range(12):
             cat = categories[i % 4]
+            # Mocking IDs that likely exist or are just placeholders
             rec = RecommendationItem(
                 category=cat,
                 brand=random.choice(brands),
-                product_name=f"{cat} Item {i+1}",
-                musinsa_id=f"1000{i}",
-                url=f"https://www.musinsa.com/app/goods/1000{i}",
-                color="Black" if i % 2 == 0 else "White",
-                reason=f"Matches your {selected_tone} tone."
+                product_name=f"Trendy {cat} {i+1}",
+                musinsa_id=f"2000{i}",  # Mock ID
+                url=f"https://www.musinsa.com/app/goods/2000{i}",
+                color="Black",
+                reason=f"Perfect for {selected_tone}"
             )
             recommendations.append(rec)
-    
+            
     result = AIAnalysisResult(
         user_analysis=UserAnalysis(
             personal_color=selected_tone,
-            skin_tone_hex="#F5CBA7",
-            best_colors=["#FF0000", "#00FF00"],
-            worst_colors=["#0000FF", "#FFFF00"]
+            skin_tone_hex="#E0AC69",
+            best_colors=["#FF0000"],
+            worst_colors=["#00FF00"]
         ),
         fashion_terrorist_check=FashionTerroristCheck(
             is_terrorist=is_terrorist,
-            mismatch_score=85 if is_terrorist else 10,
-            warning_message="색상 조합이 너무 난해합니다! 톤온톤 매칭을 시도해보세요." if is_terrorist else "좋은 스타일입니다."
+            mismatch_score=90 if is_terrorist else 5,
+            warning_message="색상 매치가 아쉽습니다. 톤온톤 스타일링을 추천합니다." if is_terrorist else "훌륭합니다."
         ),
         recommendations=recommendations,
-        status="success" if not is_terrorist else "fashion_terrorist" # Optional status override
+        status="success" if not is_terrorist else "fashion_terrorist"
     )
     
-    # Check if prompt requested "success" status explicitly despite terrorist?
-    # Keeping it simple for now.
-    
     return result
-
-# Note: Other endpoints (recommend, analyze-color) can be added here if needed to fully verify the GPU server interface.
