@@ -3,7 +3,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { userApi, productApi, getToken, Product, onboardingApi, aiApi, Photo } from '@/lib/api';
+import { userApi, productApi, getToken, Product, onboardingApi } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import BottomNav from '@/components/layout/BottomNav';
 import { User, Heart, Bell, Tag, ChevronRight, Camera, X } from 'lucide-react';
@@ -18,11 +18,8 @@ export default function MyPage() {
         alertCount: 0,
         brandCount: 0
     });
-    const [recentProducts, setRecentProducts] = useState<Product[]>([]);
-    const [dailyPhotos, setDailyPhotos] = useState<Photo[]>([]);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [isDailyUploading, setIsDailyUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [latestPhoto, setLatestPhoto] = useState<string | null>(null);
@@ -39,15 +36,13 @@ export default function MyPage() {
 
     const loadData = async () => {
         try {
-            const [userData, productsData, photosData] = await Promise.all([
+            const [userData, productsData] = await Promise.all([
                 userApi.getStatus(),
-                productApi.getAll(),
-                aiApi.getPhotos('daily')
+                productApi.getAll()
             ]);
 
             setUser(userData);
             setProducts(productsData.products);
-            setDailyPhotos(photosData.photos || []);
 
             // Calculate stats
             const allProducts = productsData.products;
@@ -59,8 +54,6 @@ export default function MyPage() {
                 brandCount: uniqueBrands.size
             });
 
-            // Get recent products (최근 3개)
-            setRecentProducts(allProducts.slice(0, 3));
         } catch (err) {
             console.error('Failed to load data:', err);
         } finally {
@@ -80,15 +73,6 @@ export default function MyPage() {
         }
     };
 
-    const refreshDailyPhotos = async () => {
-        try {
-            const data = await aiApi.getPhotos('daily');
-            setDailyPhotos(data.photos || []);
-        } catch (err) {
-            console.error('Failed to load daily photos:', err);
-        }
-    }
-
     const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -106,23 +90,6 @@ export default function MyPage() {
             setUploadError('업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
             setIsUploading(false);
-            event.target.value = '';
-        }
-    };
-
-    const handleDailyUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        setIsDailyUploading(true);
-        try {
-            await onboardingApi.upload(file, 'daily');
-            await refreshDailyPhotos();
-        } catch (err) {
-            console.error('Daily upload failed:', err);
-            alert('사진 업로드에 실패했습니다.');
-        } finally {
-            setIsDailyUploading(false);
             event.target.value = '';
         }
     };
@@ -178,36 +145,6 @@ export default function MyPage() {
                                     <span className={styles.statNumber}>{stats.brandCount}</span>
                                     <span className={styles.statLabel}>브랜드</span>
                                 </div>
-                            </div>
-                        </section>
-
-                        {/* Daily Fashion Gallery Section (Replacing Recent Wishlist) */}
-                        <section className={styles.recentSection}>
-                            <div className={styles.sectionHeader}>
-                                <h2 className={styles.sectionTitle}>나의 데일리 룩</h2>
-                                <label className={styles.addDailyBtn}>
-                                    {isDailyUploading ? '...' : '+ 추가'}
-                                    <input
-                                        type="file"
-                                        hidden
-                                        accept="image/*"
-                                        onChange={handleDailyUpload}
-                                        disabled={isDailyUploading}
-                                    />
-                                </label>
-                            </div>
-                            <div className={styles.galleryGrid}>
-                                {dailyPhotos.length > 0 ? (
-                                    dailyPhotos.map((photo, index) => (
-                                        <div key={photo.filename} className={styles.galleryItem}>
-                                            <img src={photo.url} alt={`Daily Look ${index + 1}`} />
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className={styles.emptyGallery}>
-                                        올린 사진이 없습니다.
-                                    </div>
-                                )}
                             </div>
                         </section>
 
