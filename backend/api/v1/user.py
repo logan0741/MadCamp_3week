@@ -9,7 +9,7 @@ import os
 import uuid
 
 from infrastructure.persistence.database import get_db
-from domain.entities import User
+from domain.entities import User, UserPhoto
 from domain.schemas import UserStatus, UserUpdate
 from api.dependencies import get_current_user
 from application.user_service import UserService
@@ -78,37 +78,23 @@ async def remove_interest(
 @router.get("/photos")
 async def get_user_photos(
     photo_type: str = "model",
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """List uploaded user photos by type (model or daily)"""
-    import os
-    
-    upload_dir = "uploads/users"
-    
-    if not os.path.exists(upload_dir):
-        return {"photos": []}
-        
+    """List uploaded user photos by type (model or daily) from DB"""
     try:
-        # Filter files by username and type in filename
-        # Pattern: {username}_{type}_*.ext
-        prefix = f"{current_user.username}_{photo_type}_"
-        photos = [
-            f for f in os.listdir(upload_dir) 
-            if os.path.isfile(os.path.join(upload_dir, f)) and 
-            f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) and
-            f.startswith(prefix)
-        ]
-        
-        # Sort by modification time (newest first)
-        photos.sort(key=lambda x: os.path.getmtime(os.path.join(upload_dir, x)), reverse=True)
+        photos = db.query(UserPhoto).filter(
+            UserPhoto.user_id == current_user.id,
+            UserPhoto.photo_type == photo_type
+        ).order_by(UserPhoto.created_at.desc()).all()
 
         return {
             "photos": [
                 {
-                    "filename": f,
-                    "url": f"/api/uploads/users/{f}"
+                    "filename": p.filename,
+                    "url": p.url
                 }
-                for f in photos
+                for p in photos
             ]
         }
     except Exception as e:
@@ -119,38 +105,64 @@ async def get_user_photos(
 async def upload_photo(
     file: UploadFile = File(...),
     photo_type: str = "model",
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Upload user photo with type specification"""
+    """Upload user photo with type specification and save to DB"""
     upload_dir = "uploads/users"
     os.makedirs(upload_dir, exist_ok=True)
 
-    # For 'model' type, delete existing photos of that type
+    # For 'model' type, delete existing photos of that type in DB and storage
     if photo_type == "model":
         try:
-            prefix = f"{current_user.username}_model_"
-            for f in os.listdir(upload_dir):
-                if f.startswith(prefix):
-                    os.remove(os.path.join(upload_dir, f))
+            old_photos = db.query(UserPhoto).filter(
+                UserPhoto.user_id == current_user.id,
+                UserPhoto.photo_type == "model"
+            ).all()
+            
+            for p in old_photos:
+                old_path = os.path.join(upload_dir, p.filename)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+                db.delete(p)
+            db.commit()
         except Exception as e:
-            print(f"Error deleting old model photos: {e}")
+            print(f"Error purging old model photos: {e}")
 
-    # Generate safe filename: {username}_{type}_{uuid}.{ext}
+    # Generate safe filename
     ext = os.path.splitext(file.filename)[1]
     filename = f"{current_user.username}_{photo_type}_{uuid.uuid4().hex[:8]}{ext}"
     file_path = os.path.join(upload_dir, filename)
+    url = f"/api/uploads/users/{filename}"
     
     try:
+        # Save file to disk
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+            
+        # Save record to DB
+        new_photo = UserPhoto(
+            user_id=current_user.id,
+            filename=filename,
+            url=url,
+            photo_type=photo_type
+        )
+        db.add(new_photo)
+        db.commit()
+        db.refresh(new_photo)
             
         return {
             "status": "success",
             "filename": filename,
-            "url": f"/api/uploads/users/{filename}"
+            "url": url,
+            "id": new_photo.id
         }
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        db.rollback()
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 @router.post("/ai/analyze")

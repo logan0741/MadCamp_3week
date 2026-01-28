@@ -30,38 +30,37 @@ async def generate_try_on_image(user_image_path: str, product_image_url: str, ou
     Returns:
         bool: Success
     """
+    logger.info(f" [VTON-API] Requesting Gemini VTON - User Path: {user_image_path}")
     try:
         # 1. Load User Image
         if not os.path.exists(user_image_path):
-            logger.error(f"User image not found: {user_image_path}")
+            logger.error(f" [VTON-API] User image not found: {user_image_path}")
             return False
             
         with open(user_image_path, "rb") as f:
             user_image_data = f.read()
+        logger.info(f" [VTON-API] Loaded user image ({len(user_image_data)} bytes)")
 
         # 2. Download Product Image
+        logger.info(f" [VTON-API] Downloading product image from: {product_image_url}")
         async with httpx.AsyncClient() as client:
             resp = await client.get(product_image_url)
             if resp.status_code != 200:
-                logger.error(f"Failed to download product image: {product_image_url}")
+                logger.error(f" [VTON-API] Failed to download product image. Status: {resp.status_code}")
                 return False
             product_image_data = resp.content
+        logger.info(f" [VTON-API] Downloaded product image ({len(product_image_data)} bytes)")
 
-        # 3. Prepare Model (Nano Banana Pro / gemini-3-pro-image-preview)
-        # Note: The user explicitly requested 'gemini-3-pro-image-preview'
-        # If this model name is invalid in the actual API, it will raise an error.
+        # 3. Prepare Model
         model_name = 'gemini-3-pro-image-preview'
+        logger.info(f" [VTON-API] Configuring Gemini model: {model_name}")
         try:
              model = genai.GenerativeModel(model_name)
-        except Exception:
-             # Fallback if the user's specific model name is valid but maybe configured differently?
-             # Or maybe it's just 'gemini-pro-vision'?
-             # But user requested SPECIFIC code. I will stick to it.
-             logger.warning(f"Model {model_name} might be invalid, trying instantiation anyway.")
+        except Exception as e:
+             logger.warning(f" [VTON-API] Model {model_name} initialization warning: {e}")
              model = genai.GenerativeModel(model_name)
 
         # 4. Construct Prompt
-        # "Generate a realistic image of [User] wearing [Cloth]..."
         prompt = [
             "You are a professional fashion stylist AI.",
             "Please synthesize a 'Virtual Try-On' photo.",
@@ -81,38 +80,46 @@ async def generate_try_on_image(user_image_path: str, product_image_url: str, ou
         ]
 
         # 5. Generate Content
+        logger.info(" [VTON-API] Sending request to Gemini...")
         response = model.generate_content(prompt)
+        logger.info(" [VTON-API] Response received from Gemini")
         
         # 6. Decode and Save
-        # The user provided snippet:
-        # img_data = base64.b64decode(response.parts[0].inline_data.data)
-        # However, standard Gemini response for images usually involves candidate access or direct access if it's text.
-        # But if the output is an image, the user instructions say:
-        # img_data = base64.b64decode(response.parts[0].inline_data.data)
-        
         try:
-            # We assume response structure based on user input. 
-            # Real Gemini API returns text unless it's a specific image generation model.
-            # If 'gemini-3-pro-image-preview' is an image generation model, it might return parts with inline_data.
             if hasattr(response, 'parts') and response.parts:
+                logger.info(f" [VTON-API] Response has {len(response.parts)} parts")
                 part = response.parts[0]
+                
+                # Log response structure for debugging
+                logger.info(f" [VTON-API] Part 0 keys: {dir(part)}")
+                
                 if hasattr(part, 'inline_data') and part.inline_data:
+                    logger.info(" [VTON-API] Found inline_data in response")
                     img_data = base64.b64decode(part.inline_data.data)
                     with open(output_path, 'wb') as f:
                         f.write(img_data)
+                    logger.info(f" [VTON-API] Saved generated image to: {output_path}")
                     return True
                 else:
-                    # Fallback/Check if it returned text
-                    logger.error(f"Response did not contain inline_data. Content: {response.text if hasattr(response, 'text') else 'Unknown'}")
+                    # Log text content if no image data
+                    text_content = response.text if hasattr(response, 'text') else 'No text'
+                    logger.error(f" [VTON-API] Response did not contain inline_data. Text length: {len(text_content)}")
+                    logger.error(f" [VTON-API] Text snippet: {text_content[:200]}...")
                     return False
             else:
-                logger.error("Response parts missing.")
+                logger.error(" [VTON-API] Response parts missing or empty")
+                if hasattr(response, 'prompt_feedback'):
+                    logger.error(f" [VTON-API] Prompt feedback: {response.prompt_feedback}")
                 return False
                 
         except Exception as e:
-            logger.error(f"Error processing response: {e}")
+            logger.error(f" [VTON-API] Error processing response: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
 
     except Exception as e:
-        logger.error(f"VTON generation failed: {e}")
+        logger.error(f" [VTON-API] VTON generation failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
