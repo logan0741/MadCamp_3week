@@ -22,6 +22,24 @@ from services.size_scraper import (
 router = APIRouter()
 
 
+@router.get("/", response_model=ProductListResponse)
+async def list_products(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """List all tracked products"""
+    products = db.query(Product).offset(skip).limit(limit).all()
+    
+    # We need to fetch latest price for each
+    results = []
+    for product in products:
+        latest_price = ProductService.get_latest_price(db, product.id)
+        results.append(ProductService.build_product_response(product, latest_price))
+        
+    return {"total": len(results), "products": results}
+
+
 @router.post("/track", response_model=ProductResponse)
 async def track_product(
     request: ProductTrackRequest,

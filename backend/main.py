@@ -57,7 +57,7 @@ os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include API v1 routers
-app.include_router(api_v1_router)
+app.include_router(api_v1_router, prefix="/api/v1")
 
 
 @app.get("/")
