@@ -28,7 +28,13 @@ async def run_e2e_test():
         # Assuming the verify_backend_core.py script ran first, there should be at least one product.
         
         if products_resp.status_code == 200:
-            products = products_resp.json()
+            resp_data = products_resp.json()
+            # Handle both list (old) and dict (new ProductListResponse)
+            if isinstance(resp_data, dict) and "products" in resp_data:
+                products = resp_data["products"]
+            else:
+                products = resp_data
+                
             print(f"   ✅ Got {len(products)} products")
             if products:
                 print(f"   Example: {products[0]['title']} - {products[0]['current_price']}")

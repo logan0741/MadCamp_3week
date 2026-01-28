@@ -12,3 +12,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     127.0.0.1:38480 - "GET /health HTTP/1.1" 200 OK
 INFO:     127.0.0.1:38480 - "GET /api/v1/products/ HTTP/1.1" 200 OK
 INFO:     127.0.0.1:45952 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48574 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48574 - "GET /api/v1/products/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48574 - "GET /admin/scheduler-status HTTP/1.1" 200 OK
+INFO:     Shutting down
