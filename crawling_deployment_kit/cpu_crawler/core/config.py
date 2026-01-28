@@ -1,0 +1,30 @@
+"""
+Application Configuration
+Environment variables and settings management
+"""
+import os
+from typing import List
+
+
+class Settings:
+    """Application settings loaded from environment variables"""
+    
+    # Database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./musinsa_tracker.db")
+    
+    # Security
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "musinsa-tracker-secret-key-change-in-production")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    
+    # CORS
+    ALLOWED_ORIGINS: List[str] = ["*"]
+    
+    # Upload directories
+    UPLOAD_DIR: str = "uploads"
+    
+    # API
+    API_V1_PREFIX: str = "/api/v1"
+
+
+settings = Settings()

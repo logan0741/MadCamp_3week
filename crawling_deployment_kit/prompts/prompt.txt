@@ -1,0 +1,10 @@
+You are on the MemeForty/MadCamp_3week server (172.10.5.40) that hosts backend (FastAPI), frontend (Next.js), Postgres, and internal Nginx via the docker-compose file at `/home/MadCamp/MadCamp_3week/docker-compose.yml`. SSH (22) is reachable but outbound HTTP/HTTPS (80/443) is blocked, so any calls to musinsa.com must go through an SSH tunnel or SOCKS proxy.
+
+Follow these steps sequentially:
+1. Ensure the `homecheck` compose stack is running: `COMPOSE_PROJECT_NAME=homecheck docker compose -f /home/MadCamp/MadCamp_3week/docker-compose.yml up --build -d nginx dashboard-db dashboard-backend dashboard-frontend`. Remove stale containers/volumes first if there are naming conflicts.
+2. Confirm the backend health: `docker exec dashboard-backend curl http://localhost:8000/health` should output `{"status":"healthy"}`. Run `docker exec dashboard-backend python test_scraper.py` to verify the Musinsa crawler/recommender.
+3. Validate internal routing by running `docker exec nginx curl -I http://dashboard-frontend:3000` and `docker exec nginx curl -I http://dashboard-backend:8000/health`.
+4. Expose the frontend externally via ngrok (running inside the SSH session): install/authenticate ngrok, then run `./ngrok http 80` (or 443) and capture the public `https://*.ngrok.app` URL. Accept the self-signed cert in the browser and share the URL for verification.
+5. Record the ngrok URL, health check, and crawler output into `development_progress.md` with a timestamped entry.
+
+If outbound ports ever open or a SOCKS tunnel becomes available, run `docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d socks-tunnel reverse-tunnel`, then restart the backend with `MUSINSA_SOCKS_PROXY=socks5://socks-tunnel:1080` and execute `python3 test/run_crawl_test.py`. Log the rerun results in the same progress file.
