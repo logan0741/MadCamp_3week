@@ -28,6 +28,9 @@ from infrastructure.clients.ai_client import (
 from services.vton_client import generate_try_on_image
 import uuid
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -405,16 +408,19 @@ async def create_virtual_fitting(
     3. Calls 'Nano Banana Pro' (Gemini) API.
     4. Saves result and returns it.
     """
+    logger.info(f" [VTON] Starting virtual fitting request - User: {current_user.username}, Product: {product_id}")
+    
     # 1. Get Product
     product = ProductService.get_product_by_id(db, product_id)
     if not product:
+        logger.error(f" [VTON] Product {product_id} not found")
         raise HTTPException(status_code=404, detail="Product not found")
 
     if not product.thumbnail_url:
+        logger.error(f" [VTON] Product {product_id} has no thumbnail URL")
         raise HTTPException(status_code=400, detail="Product has no image")
 
     # 2. Get User's Model Photo
-    # Logic copied from user.py to find latest model photo
     upload_dir = "uploads/users"
     user_photo_path = None
     
@@ -430,29 +436,39 @@ async def create_virtual_fitting(
         
         if photos:
             user_photo_path = os.path.join(upload_dir, photos[0])
+            logger.info(f" [VTON] Using user model photo: {user_photo_path}")
+        else:
+            logger.warning(f" [VTON] No model photos found with prefix {prefix} in {upload_dir}")
+    else:
+        logger.warning(f" [VTON] Upload directory {upload_dir} does not exist")
 
     if not user_photo_path:
+        logger.error(f" [VTON] No model photo found for user {current_user.username}")
         raise HTTPException(status_code=400, detail="No model photo found. Please upload a photo in My Page.")
 
-    # 3. Check existing fitting result?
-    # User said "retrieve it when clicked again".
+    # 3. Check existing fitting result
     existing_fitting = db.query(FittingResult).filter(
         FittingResult.user_id == current_user.id,
         FittingResult.product_id == product_id
     ).order_by(FittingResult.created_at.desc()).first()
 
     if existing_fitting:
+         logger.info(f" [VTON] Found existing fitting record: {existing_fitting.fitting_image_url}")
          # Check if file still exists
          if existing_fitting.fitting_image_url.startswith("/"):
              local_path = existing_fitting.fitting_image_url.lstrip("/")
              if os.path.exists(local_path):
+                 logger.info(f" [VTON] Returning existing fitting file: {local_path}")
                  return {
                      "status": "success",
                      "image_url": existing_fitting.fitting_image_url,
                      "message": "Retrieved existing fitting"
                  }
+             else:
+                 logger.warning(f" [VTON] Existing fitting file {local_path} not found on disk, will regenerate")
 
     # 4. Generate New Fitting
+    logger.info(f" [VTON] Generating new VTON image for user {current_user.username}")
     fitting_dir = "uploads/fittings"
     os.makedirs(fitting_dir, exist_ok=True)
     
@@ -466,10 +482,12 @@ async def create_virtual_fitting(
     )
     
     if not success:
+        logger.error(f" [VTON] VTON generation failed for user {current_user.username}")
         raise HTTPException(status_code=500, detail="VTON generation failed. Please try again later.")
         
+    logger.info(f" [VTON] Successfully generated VTON image: {output_path}")
+
     # 5. Save to DB
-    # Relative URL for frontend
     image_url = f"/api/uploads/fittings/{filename}"
     
     new_fitting = FittingResult(
@@ -480,6 +498,8 @@ async def create_virtual_fitting(
     db.add(new_fitting)
     db.commit()
     db.refresh(new_fitting)
+    
+    logger.info(f" [VTON] Saved fitting result to DB for product {product_id}")
     
     return {
         "status": "success",

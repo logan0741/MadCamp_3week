@@ -1,5 +1,6 @@
 volumes:
   postgres_data:
+  uploads_data:
 
 
 services:
@@ -33,6 +34,10 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    env_file:
+      - .env.prod
+    volumes:
+      - uploads_data:/app/uploads
 
   frontend:
     build:

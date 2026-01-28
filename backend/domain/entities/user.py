@@ -24,6 +24,7 @@ class User(Base):
 
     # Relationships
     interests = relationship("UserInterest", back_populates="user", cascade="all, delete-orphan")
+    photos = relationship("UserPhoto", back_populates="user", cascade="all, delete-orphan")
 
 
 class UserInterest(Base):
@@ -37,3 +38,18 @@ class UserInterest(Base):
     # Relationships
     user = relationship("User", back_populates="interests")
     product = relationship("Product", back_populates="interests")
+
+
+class UserPhoto(Base):
+    """User uploaded photos for styles and models"""
+    __tablename__ = "user_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    filename = Column(String, nullable=False)
+    url = Column(Text, nullable=False)
+    photo_type = Column(String(50), nullable=False)  # 'model' or 'daily'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="photos")
