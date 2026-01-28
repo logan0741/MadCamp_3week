@@ -29,6 +29,9 @@ async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown events"""
     # Startup
     logger.info("🚀 Starting Musinsa Price Tracker API")
+    for route in app.routes:
+        if hasattr(route, "path"):
+            logger.info(f"Route: {route.path}")
     price_scheduler.start()
     yield
     # Shutdown
