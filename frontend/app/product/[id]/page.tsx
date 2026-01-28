@@ -16,6 +16,8 @@ export default function ProductDetailPage() {
     const [history, setHistory] = useState<PriceLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isFitting, setIsFitting] = useState(false);
+    const [fittingImage, setFittingImage] = useState<string | null>(null);
 
     useEffect(() => {
         const token = getToken();
@@ -49,6 +51,24 @@ export default function ProductDetailPage() {
             setError('상품 정보를 불러올 수 없습니다.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleCreateFitting = async () => {
+        if (!product) return;
+        setIsFitting(true);
+        try {
+            const result = await productApi.createFitting(product.id);
+            if (result.status === 'success') {
+                setFittingImage(result.image_url);
+            } else {
+                alert('피팅 생성 실패: ' + result.message);
+            }
+        } catch (e: any) {
+            console.error(e);
+            alert('피팅 생성 중 오류가 발생했습니다.');
+        } finally {
+            setIsFitting(false);
         }
     };
 
@@ -112,12 +132,56 @@ export default function ProductDetailPage() {
             {/* Main Content */}
             <main className={styles.main}>
                 {/* 3D Avatar Section - Placeholder */}
+                {/* VTON Section */}
                 <section className={styles.avatarSection}>
-                    <div className={styles.avatarPlaceholder}>
-                        <div className={styles.avatarIcon}>👤</div>
-                        <p className={styles.avatarText}>3D 피팅 뷰</p>
-                        <p className={styles.avatarSubtext}>AI 모델 준비 중입니다</p>
-                    </div>
+                    {fittingImage ? (
+                        <div className={styles.fittingResult} style={{ textAlign: 'center' }}>
+                            <img
+                                src={fittingImage}
+                                alt="Virtual Fitting"
+                                style={{ width: '100%', borderRadius: '12px', marginBottom: '12px' }}
+                            />
+                            <button
+                                onClick={handleCreateFitting}
+                                disabled={isFitting}
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    background: '#fff',
+                                    fontSize: '14px'
+                                }}
+                            >
+                                {isFitting ? '재생성 중...' : '다시 생성하기'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className={styles.avatarPlaceholder}>
+                            <div className={styles.avatarIcon}>
+                                {isFitting ? '⏳' : '👤'}
+                            </div>
+                            <p className={styles.avatarText}>
+                                {isFitting ? 'AI 가상 피팅 생성 중...' : '2D 가상 피팅'}
+                            </p>
+                            {!isFitting && (
+                                <button
+                                    onClick={handleCreateFitting}
+                                    style={{
+                                        marginTop: '12px',
+                                        padding: '10px 20px',
+                                        backgroundColor: '#000',
+                                        color: '#fff',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    2D 모델 생성
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </section>
 
                 {/* Product Info */}

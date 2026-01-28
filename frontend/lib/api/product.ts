@@ -20,4 +20,7 @@ export const productApi = {
 
     forceUpdateAll: () =>
         apiRequest<{ message: string; status: string }>('/admin/update-prices', { method: 'POST' }),
+
+    createFitting: (productId: number) =>
+        apiRequest<{ status: string; image_url: string; message: string }>(`/products/${productId}/fitting`, { method: 'POST' }),
 };
