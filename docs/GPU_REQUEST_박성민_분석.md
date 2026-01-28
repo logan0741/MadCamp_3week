@@ -2,7 +2,7 @@
 
 ## 📍 현재 상황
 
-CPU 서버(172.10.5.132)에서 박성민 사용자 사진을 GPU 서버로 전송했어.
+CPU 서버(172.10.5.40)에서 박성민 사용자 사진을 GPU 서버로 전송했어.
 이 사진을 분석해서 퍼스널 컬러와 스타일 추천을 해줘.
 
 ---
@@ -98,7 +98,7 @@ curl -X POST http://localhost:8000/ai-recommend/recommend \
 
 분석 완료되면 CPU 서버에 알려줘:
 ```bash
-ssh root@172.10.5.132 "echo '[$(date)] 박성민 스타일 분석 완료' >> /tmp/gpu_status.txt"
+ssh root@172.10.5.40 "echo '[$(date)] 박성민 스타일 분석 완료' >> /tmp/gpu_status.txt"
 ```
 
 ---

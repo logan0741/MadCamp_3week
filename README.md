@@ -61,8 +61,8 @@ git pull origin main
 # 기존 컨테이너 중지 및 삭제
 docker compose down
 
-# 새로 빌드하여 백그라운드 실행
-docker compose up -d --build
+# 새로 빌드하여 백그라운드 실행 (프로덕션 환경)
+docker compose -f docker-compose.prod.yml up -d --build
 
 # 로그 실시간 확인
 docker compose logs -f
@@ -80,7 +80,7 @@ docker compose logs -f
 
 ```bash
 # 개발용 컨테이너 실행
-docker compose -f docker-compose.dev.yml up --build
+docker-compose -f docker-compose.dev.yml up --build
 
 # 접속
 # 프론트엔드: http://localhost:3000 (코드 수정 시 자동 반영)

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from infrastructure.persistence.database import get_db
-from domain.entities import User
+from domain.entities import User, FittingResult
 from domain.schemas import (
     ProductTrackRequest, ProductResponse, ProductListResponse,
     PriceHistoryResponse
@@ -25,6 +25,9 @@ from infrastructure.clients.ai_client import (
     analyze_product_color,
     check_gpu_server_health
 )
+from services.vton_client import generate_try_on_image
+import uuid
+import os
 
 router = APIRouter()
 
@@ -384,5 +387,102 @@ async def analyze_color_endpoint(
         return {
             "status": "error",
             "message": str(exc),
+            "message": str(exc),
             "product_id": product_id
         }
+
+
+@router.post("/{product_id}/fitting")
+async def create_virtual_fitting(
+    product_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a Virtual Try-On (VTON) image.
+    1. Uses the user's latest 'model' photo.
+    2. Uses the product's thumbnail.
+    3. Calls 'Nano Banana Pro' (Gemini) API.
+    4. Saves result and returns it.
+    """
+    # 1. Get Product
+    product = ProductService.get_product_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if not product.thumbnail_url:
+        raise HTTPException(status_code=400, detail="Product has no image")
+
+    # 2. Get User's Model Photo
+    # Logic copied from user.py to find latest model photo
+    upload_dir = "uploads/users"
+    user_photo_path = None
+    
+    if os.path.exists(upload_dir):
+        prefix = f"{current_user.username}_model_"
+        photos = [
+            f for f in os.listdir(upload_dir)
+            if os.path.isfile(os.path.join(upload_dir, f)) and 
+            f.startswith(prefix)
+        ]
+        # Sort by mtime (newest first)
+        photos.sort(key=lambda x: os.path.getmtime(os.path.join(upload_dir, x)), reverse=True)
+        
+        if photos:
+            user_photo_path = os.path.join(upload_dir, photos[0])
+
+    if not user_photo_path:
+        raise HTTPException(status_code=400, detail="No model photo found. Please upload a photo in My Page.")
+
+    # 3. Check existing fitting result?
+    # User said "retrieve it when clicked again".
+    existing_fitting = db.query(FittingResult).filter(
+        FittingResult.user_id == current_user.id,
+        FittingResult.product_id == product_id
+    ).order_by(FittingResult.created_at.desc()).first()
+
+    if existing_fitting:
+         # Check if file still exists
+         if existing_fitting.fitting_image_url.startswith("/"):
+             local_path = existing_fitting.fitting_image_url.lstrip("/")
+             if os.path.exists(local_path):
+                 return {
+                     "status": "success",
+                     "image_url": existing_fitting.fitting_image_url,
+                     "message": "Retrieved existing fitting"
+                 }
+
+    # 4. Generate New Fitting
+    fitting_dir = "uploads/fittings"
+    os.makedirs(fitting_dir, exist_ok=True)
+    
+    filename = f"fitting_{current_user.id}_{product_id}_{uuid.uuid4().hex[:8]}.png"
+    output_path = os.path.join(fitting_dir, filename)
+    
+    success = await generate_try_on_image(
+        user_image_path=user_photo_path,
+        product_image_url=product.thumbnail_url,
+        output_path=output_path
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="VTON generation failed. Please try again later.")
+        
+    # 5. Save to DB
+    # Relative URL for frontend
+    image_url = f"/api/uploads/fittings/{filename}"
+    
+    new_fitting = FittingResult(
+        user_id=current_user.id,
+        product_id=product_id,
+        fitting_image_url=image_url
+    )
+    db.add(new_fitting)
+    db.commit()
+    db.refresh(new_fitting)
+    
+    return {
+        "status": "success",
+        "image_url": image_url,
+        "message": "Generated new fitting"
+    }

@@ -8,11 +8,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api
     container_name: memeforty-frontend
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=/api
     depends_on:
       - backend
     restart: unless-stopped
@@ -93,6 +95,23 @@ services:
     volumes:
       - ${SSH_KEY_PATH:-~/.ssh/id_rsa}:/root/.ssh/id_rsa:ro
       - ${SSH_KNOWN_HOSTS:-~/.ssh/known_hosts}:/root/.ssh/known_hosts:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - memeforty-network
+
+  # ===========================================
+  # Nginx - Reverse Proxy
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: memeforty-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
       - backend
