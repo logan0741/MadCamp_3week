@@ -12,9 +12,7 @@ import logging
 from core.config import settings
 from core.database import engine, Base, get_db
 from api.v1 import router as api_v1_router
-from api.dependencies import get_current_user
 from services.scheduler import price_scheduler
-from domain.entities import User
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,8 +35,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Musinsa Price Tracker & Virtual Try-On API",
-    description="무신사 가격 추적 및 3D 가상 피팅 서비스 API",
+    title="Musinsa Price Tracker API",
+    description="무신사 가격 추적 서비스 API",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -59,14 +57,13 @@ os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include API v1 routers
-# Note: keeping legacy routes without /api/v1 prefix for backward compatibility
 app.include_router(api_v1_router)
 
 
 @app.get("/")
 async def root():
     return {
-        "message": "Musinsa Price Tracker & Virtual Try-On API",
+        "message": "Musinsa Price Tracker API",
         "docs": "/docs",
         "version": "1.0.0"
     }
@@ -81,10 +78,9 @@ async def health_check():
 
 @app.post("/admin/update-prices")
 async def trigger_price_update(
-    background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user)
+    background_tasks: BackgroundTasks
 ):
-    """Manually trigger a price update for all products (requires authentication)"""
+    """Manually trigger a price update for all products"""
     background_tasks.add_task(price_scheduler.update_all_prices)
     return {
         "message": "가격 업데이트가 백그라운드에서 시작되었습니다.",
@@ -94,10 +90,9 @@ async def trigger_price_update(
 
 @app.post("/admin/update-price/{product_id}")
 async def trigger_single_price_update(
-    product_id: int,
-    current_user: User = Depends(get_current_user)
+    product_id: int
 ):
-    """Manually update price for a single product (requires authentication)"""
+    """Manually update price for a single product"""
     result = await price_scheduler.update_single_product(product_id)
     
     if result:
@@ -113,9 +108,7 @@ async def trigger_single_price_update(
 
 
 @app.get("/admin/scheduler-status")
-async def get_scheduler_status(
-    current_user: User = Depends(get_current_user)
-):
+async def get_scheduler_status():
     """Get current scheduler status and next run times"""
     jobs = []
     for job in price_scheduler.scheduler.get_jobs():

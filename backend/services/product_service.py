@@ -6,10 +6,10 @@ import re
 import json
 
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from fastapi import HTTPException
 
-from domain.entities import User, Product, UserInterest, PriceLog
+from domain.entities import Product, PriceLog
 from domain.schemas import ProductResponse, PriceLogResponse, PriceHistoryResponse
 
 
@@ -75,7 +75,6 @@ class ProductService:
     def add_price_log(db: Session, product_id: int, price: int, discount_rate: Optional[int] = None) -> PriceLog:
         """Add or update price log for today (Upsert)"""
         from datetime import datetime
-        from sqlalchemy import func
         
         today = datetime.now().date()
         
@@ -108,58 +107,6 @@ class ProductService:
         return db.query(PriceLog).filter(
             PriceLog.product_id == product_id
         ).order_by(desc(PriceLog.captured_at)).first()
-    
-    @staticmethod
-    def check_user_interest(db: Session, user_id: int, product_id: int) -> bool:
-        """Check if user has this product in interests"""
-        existing = db.query(UserInterest).filter(
-            UserInterest.user_id == user_id,
-            UserInterest.product_id == product_id
-        ).first()
-        return existing is not None
-    
-    @staticmethod
-    def add_to_interests(db: Session, user_id: int, product_id: int) -> UserInterest:
-        """Add product to user's interests"""
-        interest = UserInterest(
-            user_id=user_id,
-            product_id=product_id
-        )
-        db.add(interest)
-        db.commit()
-        return interest
-    
-    @staticmethod
-    def remove_from_interests(db: Session, user_id: int, product_id: int) -> bool:
-        """Remove product from user's interests"""
-        interest = db.query(UserInterest).filter(
-            UserInterest.user_id == user_id,
-            UserInterest.product_id == product_id
-        ).first()
-        
-        if not interest:
-            return False
-        
-        db.delete(interest)
-        db.commit()
-        return True
-    
-    @staticmethod
-    def get_user_products(db: Session, user_id: int) -> List[Tuple[Product, Optional[PriceLog]]]:
-        """Get all products in user's interest list with latest prices"""
-        interests = db.query(UserInterest).filter(
-            UserInterest.user_id == user_id
-        ).all()
-        
-        result = []
-        for interest in interests:
-            product = interest.product
-            latest_price = db.query(PriceLog).filter(
-                PriceLog.product_id == product.id
-            ).order_by(desc(PriceLog.captured_at)).first()
-            result.append((product, latest_price))
-        
-        return result
     
     @staticmethod
     def build_product_response(product: Product, latest_price: Optional[PriceLog]) -> ProductResponse:

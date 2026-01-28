@@ -20,7 +20,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-_CACHE_DIR = Path(__file__).resolve().parent.parent / "data"
+_CACHE_DIR = Path(__file__).resolve().parent
 _CACHE_PATH = _CACHE_DIR / "size_cache.json"
 _CACHE_TTL_HOURS = 24
 

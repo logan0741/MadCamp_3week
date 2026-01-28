@@ -22,7 +22,7 @@ class Product(Base):
     original_price = Column(Integer, nullable=True)  # Price before discount
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # AI Analysis Fields
+    # AI Analysis Fields (kept for schema compatibility, though AI is removed)
     is_garment_modeled = Column(Boolean, default=False)
     
     # Color Analysis
@@ -34,7 +34,6 @@ class Product(Base):
     color_temperature = Column(String(20), nullable=True)
 
     # Relationships
-    interests = relationship("UserInterest", back_populates="product", cascade="all, delete-orphan")
     price_logs = relationship("PriceLog", back_populates="product", cascade="all, delete-orphan")
 
 
