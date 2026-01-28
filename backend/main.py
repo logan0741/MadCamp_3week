@@ -10,10 +10,10 @@ import os
 import logging
 
 from core.config import settings
-from core.database import engine, Base, get_db
+from infrastructure.persistence.database import engine, Base, get_db
 from api.v1 import router as api_v1_router
 from api.dependencies import get_current_user
-from services.scheduler import price_scheduler
+from application.scheduler import price_scheduler
 from domain.entities import User
 
 # Configure logging

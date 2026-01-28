@@ -8,11 +8,11 @@ import shutil
 import os
 import uuid
 
-from core.database import get_db
+from infrastructure.persistence.database import get_db
 from domain.entities import User
 from domain.schemas import UserStatus, UserUpdate
 from api.dependencies import get_current_user
-from services.user_service import UserService
+from application.user_service import UserService
 
 router = APIRouter()
 
@@ -77,35 +77,38 @@ async def remove_interest(
 
 @router.get("/photos")
 async def get_user_photos(
+    photo_type: str = "model",
     current_user: User = Depends(get_current_user)
 ):
-    """List uploaded user photos"""
+    """List uploaded user photos by type (model or daily)"""
     import os
     
-    # Define upload directory (relative to backend root)
-    # This should match where uploads are saved. 
-    # Usually 'uploads/users' based on previous context.
     upload_dir = "uploads/users"
     
     if not os.path.exists(upload_dir):
         return {"photos": []}
         
     try:
+        # Filter files by username and type in filename
+        # Pattern: {username}_{type}_*.ext
+        prefix = f"{current_user.username}_{photo_type}_"
         photos = [
             f for f in os.listdir(upload_dir) 
             if os.path.isfile(os.path.join(upload_dir, f)) and 
-            f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
+            f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) and
+            f.startswith(prefix)
         ]
-        # Return full URLs if static mount is working, or just filenames
-        # Static mount is at /uploads
-        # So URL would be /uploads/users/{filename}
+        
+        # Sort by modification time (newest first)
+        photos.sort(key=lambda x: os.path.getmtime(os.path.join(upload_dir, x)), reverse=True)
+
         return {
             "photos": [
                 {
                     "filename": f,
-                    "url": f"/uploads/users/{f}"
+                    "url": f"/api/uploads/users/{f}"
                 }
-                for f in sorted(photos)
+                for f in photos
             ]
         }
     except Exception as e:
@@ -115,15 +118,26 @@ async def get_user_photos(
 @router.post("/photos")
 async def upload_photo(
     file: UploadFile = File(...),
+    photo_type: str = "model",
     current_user: User = Depends(get_current_user)
 ):
-    """Upload user photo"""
+    """Upload user photo with type specification"""
     upload_dir = "uploads/users"
     os.makedirs(upload_dir, exist_ok=True)
-    
-    # Generate safe filename
+
+    # For 'model' type, delete existing photos of that type
+    if photo_type == "model":
+        try:
+            prefix = f"{current_user.username}_model_"
+            for f in os.listdir(upload_dir):
+                if f.startswith(prefix):
+                    os.remove(os.path.join(upload_dir, f))
+        except Exception as e:
+            print(f"Error deleting old model photos: {e}")
+
+    # Generate safe filename: {username}_{type}_{uuid}.{ext}
     ext = os.path.splitext(file.filename)[1]
-    filename = f"{current_user.username}_{uuid.uuid4().hex[:8]}{ext}"
+    filename = f"{current_user.username}_{photo_type}_{uuid.uuid4().hex[:8]}{ext}"
     file_path = os.path.join(upload_dir, filename)
     
     try:
@@ -133,7 +147,7 @@ async def upload_photo(
         return {
             "status": "success",
             "filename": filename,
-            "url": f"/uploads/users/{filename}"
+            "url": f"/api/uploads/users/{filename}"
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -151,7 +165,7 @@ async def analyze_photo(
     2. Call GPU (analyze_custom)
     3. If valid, crawl/track products asynchronously (or sync if fast enough)
     """
-    from services.ai_client import analyze_custom_prompt
+    from infrastructure.clients.ai_client import analyze_custom_prompt
     import os
     
     filename = request.get("filename")
@@ -187,7 +201,7 @@ async def analyze_photo(
         
     # 5. Process Recommendations (Crawl & Save)
     # Import here to avoid circular deps
-    from services.product_service import ProductService
+    from application.product_service import ProductService
     import logging
     logger = logging.getLogger(__name__)
 

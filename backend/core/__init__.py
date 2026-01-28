@@ -1,7 +1,7 @@
 """
 Core package - Configuration, Database, Security
 """
-from core.database import Base, engine, SessionLocal, get_db, SQLALCHEMY_DATABASE_URL
+from infrastructure.persistence.database import Base, engine, SessionLocal, get_db, SQLALCHEMY_DATABASE_URL
 from core.config import settings
 from core.security import (
     verify_password,

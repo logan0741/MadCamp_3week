@@ -1,0 +1,23 @@
+Crawling + recommendation logic bundle
+Created: 2026-01-27T16:53:53
+
+Included files:
+backend/services/scraper.py
+backend/services/category_crawler.py
+backend/services/size_scraper.py
+backend/services/musinsa_proxy.py
+backend/services/color_analyzer.py
+backend/services/style_analyzer.py
+backend/services/recommendation_service.py
+backend/services/personal_color.py
+backend/api/v1/ai_recommend.py
+backend/api/v1/personal_color.py
+backend/debug_scraper.py
+backend/test_scraper.py
+backend/test_scrape_result.json
+test/run_crawl_test.py
+test/crawl_personalcolor_recommendation_result.json
+nginx/musinsa_proxy.conf
+docs/crawling_report.md
+docs/current_status_crawling_network.md
+docs/vps_reverse_proxy.conf

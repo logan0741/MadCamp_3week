@@ -38,9 +38,9 @@ export interface AIResponse {
 }
 
 export const aiApi = {
-    // List uploaded user photos
-    getPhotos: async (): Promise<{ photos: Photo[] }> => {
-        return apiRequest('/user/photos', {
+    // List uploaded user photos by type
+    getPhotos: async (photoType: 'model' | 'daily' = 'model'): Promise<{ photos: Photo[] }> => {
+        return apiRequest(`/user/photos?photo_type=${photoType}`, {
             method: 'GET'
         });
     },
@@ -55,11 +55,11 @@ export const aiApi = {
 };
 
 export const onboardingApi = {
-    upload: async (file: File) => {
+    upload: async (file: File, photoType: 'model' | 'daily' = 'model') => {
         const formData = new FormData();
         formData.append('file', file);
 
-        // Use the new /user/photos endpoint
-        return uploadRequest('/user/photos', formData);
+        // Use the new /user/photos endpoint with type
+        return uploadRequest(`/user/photos?photo_type=${photoType}`, formData);
     }
 };

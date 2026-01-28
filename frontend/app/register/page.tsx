@@ -14,6 +14,9 @@ export default function RegisterPage() {
         username: '',
         password: '',
         confirmPassword: '',
+        height: '',
+        weight: '',
+        gender: 'male',
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +50,9 @@ export default function RegisterPage() {
             const user = await authApi.register({
                 username: formData.username,
                 password: formData.password,
+                height: formData.height ? parseFloat(formData.height) : undefined,
+                weight: formData.weight ? parseFloat(formData.weight) : undefined,
+                gender: formData.gender,
             });
 
             // Auto login after registration
@@ -54,8 +60,8 @@ export default function RegisterPage() {
             setToken(access_token);
             setUser(user);
 
-            // New user always goes to onboarding
-            router.push('/onboarding');
+            // Redirect to dashboard
+            router.push('/dashboard');
         } catch (err) {
             setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
         } finally {
@@ -112,6 +118,57 @@ export default function RegisterPage() {
                             onChange={handleChange}
                             required
                         />
+                    </div>
+
+                    <div className="input-row">
+                        <div className="input-group">
+                            <label className="input-label">키 (cm)</label>
+                            <input
+                                type="number"
+                                name="height"
+                                className="input"
+                                placeholder="예: 175"
+                                value={formData.height}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">몸무게 (kg)</label>
+                            <input
+                                type="number"
+                                name="weight"
+                                className="input"
+                                placeholder="예: 70"
+                                value={formData.weight}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">성별</label>
+                        <div className={styles.radioGroup}>
+                            <label className={styles.radioLabel}>
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="male"
+                                    checked={formData.gender === 'male'}
+                                    onChange={handleChange}
+                                />
+                                남성
+                            </label>
+                            <label className={styles.radioLabel}>
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="female"
+                                    checked={formData.gender === 'female'}
+                                    onChange={handleChange}
+                                />
+                                여성
+                            </label>
+                        </div>
                     </div>
 
                     {error && <div className={styles.error}>{error}</div>}

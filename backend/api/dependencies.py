@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 
-from core.database import get_db
+from infrastructure.persistence.database import get_db
 from core.security import oauth2_scheme, SECRET_KEY, ALGORITHM
 from domain.entities import User
 

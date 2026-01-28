@@ -8,11 +8,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api
     container_name: memeforty-frontend
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+    env_file:
+      - .env.prod
+    # Remove redundant environment variables that are in .env.prod
     depends_on:
       - backend
     restart: unless-stopped
@@ -34,11 +37,9 @@ services:
     container_name: memeforty-backend
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://memeforty:${POSTGRES_PASSWORD}@postgres:5432/memeforty}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-      - ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    env_file:
+      - .env.prod
+    # Remove redundant environment variables that are in .env.prod
     volumes:
       - ./backend/app.db:/app/app.db
       - ./backend/uploads:/app/uploads
@@ -62,10 +63,9 @@ services:
     container_name: memeforty-postgres
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-memeforty}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password_change_me}
-      - POSTGRES_DB=${POSTGRES_DB:-memeforty}
+    env_file:
+      - .env.prod
+    # Remove redundant environment variables that are in .env.prod
     volumes:
       - postgres-data-v3:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -86,13 +86,29 @@ services:
       context: ./autossh
       dockerfile: Dockerfile
     container_name: memeforty-autossh
-    environment:
-      - SSH_HOST=${SSH_HOST:-voice-anime-fight.p-e.kr}
-      - SSH_USER=${SSH_USER:-root}
-      - SSH_PORT=${SSH_PORT:-22}
+    env_file:
+      - .env.prod
+    # Remove redundant environment variables that are in .env.prod
     volumes:
       - ${SSH_KEY_PATH:-~/.ssh/id_rsa}:/root/.ssh/id_rsa:ro
       - ${SSH_KNOWN_HOSTS:-~/.ssh/known_hosts}:/root/.ssh/known_hosts:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - memeforty-network
+
+  # ===========================================
+  # Nginx - Reverse Proxy
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: memeforty-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
       - backend

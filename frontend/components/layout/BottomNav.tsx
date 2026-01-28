@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { List, User } from 'lucide-react';
+import { List, Sparkles, User } from 'lucide-react';
 import styles from './BottomNav.module.css';
 
 export default function BottomNav() {
@@ -21,13 +21,11 @@ export default function BottomNav() {
             </Link>
 
             <Link
-                href="/recommend"
-                className={`${styles.navItem} ${isActive('/recommend') ? styles.active : ''}`}
+                href="/style"
+                className={`${styles.navItem} ${isActive('/style') ? styles.active : ''}`}
             >
-                <div style={{ position: 'relative' }}>
-                    <span style={{ fontSize: '24px' }}>✨</span>
-                </div>
-                <span className={styles.label}>AI 추천</span>
+                <Sparkles size={24} strokeWidth={isActive('/style') ? 2.5 : 2} />
+                <span className={styles.label}>스타일</span>
             </Link>
 
             <Link

@@ -1,11 +1,11 @@
 """
 User Entity - User and UserInterest models
 """
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from core.database import Base
+from infrastructure.persistence.database import Base
 
 
 class User(Base):
@@ -13,8 +13,13 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, nullable=False, index=True)
-    password_hash = Column(Text, nullable=False)
+    username = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+    
+    # User Profile
+    height = Column(Float, nullable=True)
+    weight = Column(Float, nullable=True)
+    gender = Column(String(10), nullable=True)  # 'male' or 'female'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

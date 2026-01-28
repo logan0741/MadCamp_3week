@@ -9,6 +9,9 @@ class UserStatus(BaseModel):
     """Schema for user status response"""
     id: int
     username: str
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    gender: Optional[str] = None
 
     class Config:
         from_attributes = True
