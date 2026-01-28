@@ -165,6 +165,41 @@ async def upload_photo(
         }
 
 
+@router.delete("/photos/{filename}")
+async def delete_photo(
+    filename: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a user photo from DB and disk"""
+    upload_dir = "uploads/users"
+    
+    try:
+        photo = db.query(UserPhoto).filter(
+            UserPhoto.user_id == current_user.id,
+            UserPhoto.filename == filename
+        ).first()
+        
+        if not photo:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Photo not found")
+            
+        # Delete from disk
+        file_path = os.path.join(upload_dir, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            
+        # Delete from DB
+        db.delete(photo)
+        db.commit()
+        
+        return {"status": "success", "message": "Photo deleted"}
+    except Exception as e:
+        db.rollback()
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/ai/analyze")
 async def analyze_photo(
     request: dict,  # {"filename": "..."}

@@ -4,6 +4,7 @@ import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, aiApi, onboardingApi, Photo } from '@/lib/api';
+import { X } from 'lucide-react';
 import BottomNav from '@/components/layout/BottomNav';
 import styles from './style.module.css';
 
@@ -51,6 +52,21 @@ export default function StylePage() {
         }
     };
 
+    const handleDeletePhoto = async (e: React.MouseEvent, filename: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!confirm('사진을 삭제하시겠습니까?')) return;
+
+        try {
+            await aiApi.deletePhoto(filename);
+            await loadDailyPhotos();
+        } catch (err) {
+            console.error('Failed to delete photo:', err);
+            alert('사진 삭제에 실패했습니다.');
+        }
+    };
+
     return (
         <div className={styles.page}>
             <main className={styles.main}>
@@ -82,13 +98,21 @@ export default function StylePage() {
                             <div className={styles.galleryGrid}>
                                 {dailyPhotos.length > 0 ? (
                                     dailyPhotos.map((photo, index) => (
-                                        <Link
-                                            key={photo.filename}
-                                            href={`/style/${encodeURIComponent(photo.filename)}`}
-                                            className={styles.galleryItem}
-                                        >
-                                            <img src={photo.url} alt={`Daily Look ${index + 1}`} />
-                                        </Link>
+                                        <div key={photo.filename} className={styles.galleryItemContainer}>
+                                            <Link
+                                                href={`/style/${encodeURIComponent(photo.filename)}`}
+                                                className={styles.galleryItem}
+                                            >
+                                                <img src={photo.url} alt={`Daily Look ${index + 1}`} />
+                                            </Link>
+                                            <button
+                                                className={styles.deleteBtn}
+                                                onClick={(e) => handleDeletePhoto(e, photo.filename)}
+                                                aria-label="Delete photo"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
                                     ))
                                 ) : (
                                     <div className={styles.emptyGallery}>

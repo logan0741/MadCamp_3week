@@ -95,3 +95,34 @@
 .addDailyBtn:hover {
     background: rgba(255, 77, 0, 0.05);
 }
+
+.galleryItemContainer {
+    position: relative;
+    width: 100%;
+}
+
+.deleteBtn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+    background: var(--color-error);
+    color: white;
+    border-color: var(--color-error);
+    transform: scale(1.1);
+}

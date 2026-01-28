@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { authApi, userApi, setToken } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import styles from './login.module.css';
@@ -42,8 +43,14 @@ export default function LoginPage() {
             <div className={styles.loginBox}>
                 {/* Logo */}
                 <div className={styles.logo}>
-                    <div className={styles.logoIcon}>M</div>
-                    <h1>MUSINSA<span>Tracker</span></h1>
+                    <Image
+                        src="/images/fitme_logo.png"
+                        alt="fitme logo"
+                        width={180}
+                        height={60}
+                        priority
+                        className={styles.logoImage}
+                    />
                 </div>
 
                 <p className={styles.subtitle}>가격 추적 & 가상 피팅</p>

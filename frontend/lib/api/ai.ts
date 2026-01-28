@@ -51,6 +51,13 @@ export const aiApi = {
             method: 'POST',
             body: JSON.stringify({ filename })
         });
+    },
+
+    // Delete a photo
+    deletePhoto: async (filename: string): Promise<{ status: string; message: string }> => {
+        return apiRequest(`/user/photos/${filename}`, {
+            method: 'DELETE'
+        });
     }
 };
 
