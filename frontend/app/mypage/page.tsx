@@ -3,7 +3,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { userApi, productApi, getToken, Product, onboardingApi } from '@/lib/api';
+import { userApi, productApi, getToken, Product, onboardingApi, aiApi } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import BottomNav from '@/components/layout/BottomNav';
 import { User, Heart, Bell, Tag, ChevronRight, Camera, X } from 'lucide-react';
