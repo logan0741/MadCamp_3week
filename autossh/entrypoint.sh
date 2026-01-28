@@ -13,9 +13,11 @@ echo "  - Static    :8080 -> VPS :8080"
 echo "==================================================="
 
 # Check SSH key permissions
+# Check SSH key permissions
 if [ -f /root/.ssh/id_rsa ]; then
-    chmod 600 /root/.ssh/id_rsa
-    echo "SSH key found and permissions set."
+    cp /root/.ssh/id_rsa /root/.ssh/id_rsa_temp
+    chmod 600 /root/.ssh/id_rsa_temp
+    echo "SSH key found and permissions set (using copy)."
 else
     echo "ERROR: SSH key not found at /root/.ssh/id_rsa"
     echo "Please mount your SSH key using:"
@@ -31,7 +33,7 @@ sleep 10
 # Test connectivity to SSH host
 echo "Testing connectivity to ${SSH_HOST}..."
 if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
-    -i /root/.ssh/id_rsa -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} exit 2>/dev/null; then
+    -i /root/.ssh/id_rsa_temp -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} exit 2>/dev/null; then
     echo "WARNING: Cannot connect to ${SSH_HOST}. Will retry with autossh..."
 fi
 
@@ -50,8 +52,9 @@ exec autossh -M 0 -N \
     -o "ConnectTimeout=30" \
     -R 3000:frontend:3000 \
     -R 8000:backend:8000 \
+    -R 80:nginx:80 \
     -R 8001:ai-engine:8001 \
     -R 8080:nginx-static:8080 \
-    -i /root/.ssh/id_rsa \
+    -i /root/.ssh/id_rsa_temp \
     -p ${SSH_PORT} \
     ${SSH_USER}@${SSH_HOST}
