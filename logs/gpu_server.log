@@ -1,0 +1,22 @@
+INFO:     Started server process [1308123]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:35520 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:48436 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:47368 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:47374 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:38902 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:38906 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:38918 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:38926 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:51446 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:51450 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:51458 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:51472 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:46380 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:46384 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:52552 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:52566 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK
+INFO:     172.18.0.3:45508 - "GET /ai-recommend/health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:45514 - "POST /ai-recommend/analyze-custom HTTP/1.1" 200 OK

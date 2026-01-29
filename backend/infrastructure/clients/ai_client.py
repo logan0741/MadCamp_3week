@@ -4,31 +4,35 @@ GPU 서버(192.168.0.250:8000)의 AI 추천 API를 호출
 """
 import httpx
 import logging
+import os
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 # AI API Server (Remote)
-GPU_API_URL = "http://172.10.5.42:8000"
-GPU_API_TIMEOUT = 30.0
+GPU_API_URL = os.getenv("GPU_API_URL") or os.getenv("AI_RECOMMEND_BASE_URL") or "http://host.docker.internal:8001"
+GPU_API_TIMEOUT = float(os.getenv("GPU_API_TIMEOUT_SECONDS", os.getenv("GPU_API_TIMEOUT", "30")))
+GPU_API_CONNECT_TIMEOUT = float(os.getenv("GPU_API_CONNECT_TIMEOUT", "5"))
 
 
 class AIClient:
     """GPU 서버 AI API 클라이언트"""
 
     def __init__(self, base_url: str = GPU_API_URL, timeout: float = GPU_API_TIMEOUT):
-        self.base_url = base_url
+        self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self._timeout = httpx.Timeout(timeout, connect=GPU_API_CONNECT_TIMEOUT)
 
     async def health_check(self) -> Dict:
         """AI 서비스 상태 확인"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
             try:
                 response = await client.get(f"{self.base_url}/ai-recommend/health")
+                response.raise_for_status()
                 return response.json()
             except Exception as e:
-                logger.error(f"AI health check failed: {e}")
-                return {"status": "unavailable", "error": str(e)}
+                logger.exception("AI health check failed: %r", e)
+                return {"status": "unavailable", "error": repr(e)}
 
     async def get_recommendation(
         self,
@@ -73,16 +77,17 @@ class AIClient:
             "limit": limit
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
             try:
                 response = await client.post(
                     f"{self.base_url}/ai-recommend/recommend",
                     json=payload
                 )
+                response.raise_for_status()
                 return response.json()
             except Exception as e:
-                logger.error(f"AI recommendation failed: {e}")
-                return {"status": "error", "message": str(e)}
+                logger.exception("AI recommendation failed: %r", e)
+                return {"status": "error", "message": repr(e)}
 
     async def analyze_color(
         self,
@@ -104,16 +109,17 @@ class AIClient:
             "additional_urls": additional_urls or []
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
             try:
                 response = await client.post(
                     f"{self.base_url}/ai-recommend/analyze-color",
                     json=payload
                 )
+                response.raise_for_status()
                 return response.json()
             except Exception as e:
-                logger.error(f"Color analysis failed: {e}")
-                return {"status": "error", "message": str(e)}
+                logger.exception("Color analysis failed: %r", e)
+                return {"status": "error", "message": repr(e)}
 
     async def batch_analyze_colors(self, products: List[Dict]) -> Dict:
         """
@@ -127,16 +133,17 @@ class AIClient:
         """
         payload = {"products": products}
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=GPU_API_CONNECT_TIMEOUT)) as client:
             try:
                 response = await client.post(
                     f"{self.base_url}/ai-recommend/batch-analyze",
                     json=payload
                 )
+                response.raise_for_status()
                 return response.json()
             except Exception as e:
-                logger.error(f"Batch analysis failed: {e}")
-                return {"status": "error", "message": str(e)}
+                logger.exception("Batch analysis failed: %r", e)
+                return {"status": "error", "message": repr(e)}
 
     async def analyze_custom(self, image_url: str, prompt: str) -> Dict:
         """
@@ -154,7 +161,7 @@ class AIClient:
             "prompt": prompt
         }
         
-        async with httpx.AsyncClient(timeout=120.0) as client:  # 긴 타임아웃
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=GPU_API_CONNECT_TIMEOUT)) as client:  # 긴 타임아웃
             try:
                 # Assuming the GPU server has a generic endpoint for this
                 # If not, this might need to be adjusted to whatever the GPU server supports
@@ -162,10 +169,11 @@ class AIClient:
                     f"{self.base_url}/ai-recommend/analyze-custom",
                     json=payload
                 )
+                response.raise_for_status()
                 return response.json()
             except Exception as e:
-                logger.error(f"Custom analysis failed: {e}")
-                return {"status": "error", "message": str(e)}
+                logger.exception("Custom analysis failed: %r", e)
+                return {"status": "error", "message": repr(e)}
 
 
 # 싱글톤 인스턴스

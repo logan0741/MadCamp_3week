@@ -1,4 +1,5 @@
 import { apiRequest, uploadRequest } from './client';
+import type { Product } from '@/lib/types';
 
 export interface Photo {
     filename: string;
@@ -35,6 +36,7 @@ export interface AIResponse {
     message?: string;
     data?: AnalysisResult;
     processed_count?: number;
+    tracked_products?: Product[];
 }
 
 export const aiApi = {

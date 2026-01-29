@@ -2,7 +2,7 @@
 User Router - User status and profile management
 Thin controller layer - delegates to UserService
 """
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Request
 from sqlalchemy.orm import Session
 import shutil
 import os
@@ -203,6 +203,7 @@ async def delete_photo(
 @router.post("/ai/analyze")
 async def analyze_photo(
     request: dict,  # {"filename": "..."}
+    http_request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -212,7 +213,7 @@ async def analyze_photo(
     2. Call GPU (analyze_custom)
     3. If valid, crawl/track products asynchronously (or sync if fast enough)
     """
-    from infrastructure.clients.ai_client import analyze_custom_prompt
+    from infrastructure.clients.ai_client import analyze_custom_prompt, ai_client
     import os
     
     filename = request.get("filename")
@@ -228,10 +229,23 @@ async def analyze_photo(
         return {"status": "error", "message": "Prompt file not found"}
         
     # 2. Construct Image URL (Accessible by GPU server)
-    # Host IP is 192.168.0.77 based on check
-    image_url = f"http://192.168.0.77:8000/uploads/users/{filename}"
+    uploads_base = (
+        os.getenv("UPLOADS_BASE_URL")
+        or os.getenv("PUBLIC_BASE_URL")
+        or os.getenv("API_URL")
+        or str(http_request.base_url).rstrip("/")
+    )
+    image_url = f"{uploads_base}/uploads/users/{filename}"
+
+    # 3. Check GPU server health before calling analysis
+    health = await ai_client.health_check()
+    if health.get("status") != "healthy":
+        return {
+            "status": "error",
+            "message": f"GPU 서버 연결 실패: {health.get('error', 'unavailable')}"
+        }
     
-    # 3. Call GPU
+    # 4. Call GPU
     result = await analyze_custom_prompt(image_url, prompt_text)
     
     if result.get("status") == "error":
@@ -254,6 +268,7 @@ async def analyze_photo(
 
     recommendations = result.get("recommendations", [])
     processed_recs = []
+    seen_ids = set()
     
     # Process synchronously for MVP (limit 12 items, approx 30-60s)
     # Ideally should be BackgroundTasks, but user wants immediate feedback?
@@ -264,24 +279,31 @@ async def analyze_photo(
         
         # Extract ID from URL if ID is missing but URL exists
         if not musinsa_id and url:
-            import re
-            match = re.search(r'/products/(\d+)', url)
-            if match:
-                musinsa_id = match.group(1)
+            try:
+                musinsa_id = ProductService.extract_musinsa_id(url)
+            except Exception:
+                musinsa_id = None
         
         if musinsa_id:
             try:
-                # Track/Crawl product
-                product = ProductService.track_product(db, musinsa_id)
+                musinsa_id = str(musinsa_id)
+                if musinsa_id in seen_ids:
+                    continue
+                seen_ids.add(musinsa_id)
+
+                # Track/Crawl product without auto-adding to interests
+                product = await ProductService.track_product(db, musinsa_id, url)
                 if product:
-                    # Return product details so frontend can add to interest later
-                    # We do NOT add to interest automatically here.
-                    processed_recs.append(product)
+                    latest_price = ProductService.get_latest_price(db, product.id)
+                    processed_recs.append(
+                        ProductService.build_product_response(product, latest_price)
+                    )
             except Exception as e:
                 logger.error(f"Failed to track recommended item {musinsa_id}: {e}")
                 
     return {
         "status": "success",
         "data": result,
-        "processed_count": len(processed_recs)
+        "processed_count": len(processed_recs),
+        "tracked_products": processed_recs
     }

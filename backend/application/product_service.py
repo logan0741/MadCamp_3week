@@ -70,6 +70,63 @@ class ProductService:
         db.commit()
         db.refresh(product)
         return product
+
+    @staticmethod
+    async def track_product(
+        db: Session,
+        musinsa_id: str,
+        url: Optional[str] = None
+    ) -> Optional[Product]:
+        """
+        Track or create a product by Musinsa ID without adding to user interests.
+        Returns the Product entity if available.
+        """
+        product = ProductService.get_product_by_musinsa_id(db, musinsa_id)
+        if product:
+            return product
+
+        # Build a fallback URL if one is not provided
+        fallback_url = False
+        if not url:
+            url = f"https://www.musinsa.com/products/{musinsa_id}"
+            fallback_url = True
+
+        # Import here to avoid heavy module load at startup
+        from infrastructure.clients.scraper import scrape_musinsa_product
+
+        try:
+            product_info = await scrape_musinsa_product(url, musinsa_id)
+        except Exception:
+            product_info = {
+                "title": f"상품 {musinsa_id}",
+                "brand": None,
+                "thumbnail_url": None,
+                "image_urls": [],
+                "price": None,
+                "original_price": None,
+                "discount_rate": None,
+                "product_id": musinsa_id
+            }
+
+        scraped_id = product_info.get("product_id") or musinsa_id
+        if scraped_id != musinsa_id:
+            existing = ProductService.get_product_by_musinsa_id(db, scraped_id)
+            if existing:
+                return existing
+            musinsa_id = scraped_id
+            if fallback_url:
+                url = f"https://www.musinsa.com/products/{musinsa_id}"
+
+        product = ProductService.create_product(db, musinsa_id, url, product_info)
+
+        if product_info.get("price"):
+            ProductService.add_price_log(
+                db, product.id,
+                product_info["price"],
+                product_info.get("discount_rate")
+            )
+
+        return product
     
     @staticmethod
     def add_price_log(db: Session, product_id: int, price: int, discount_rate: Optional[int] = None) -> PriceLog:
