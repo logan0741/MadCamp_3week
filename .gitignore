@@ -8,6 +8,7 @@ venv/
 ENV/
 env/
 .venv/
+.venv_gpu/
 *.egg-info/
 dist/
 build/
@@ -49,6 +50,12 @@ frontend/public/test_artifacts/
 .env
 .env.local
 .env.*.local
+.env.prod
+**/.env.prod
+
+# Logs
+logs/
+*.log
 
 # Large model weights (use Git LFS or download separately)
 ai-pipeline/models/weights/
